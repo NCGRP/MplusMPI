@@ -1,5 +1,5 @@
 To compile:  use "make"
-Usage: m+ varfile datfile [-m mincoresize maxcoresize samplingfreq reps outputfile]
+Usage: m+ varfile datfile [-m mincoresize maxcoresize samplingfreq reps outputfile] [-r]
         [-k kernelfile] [-a idealcorefile]
 where, 
 varfile = path to MSTRAT .var file
@@ -14,6 +14,8 @@ Options:
             and so on, to be sampled.
         reps = number of replicate core sets to calculate for a particular core size
         outputfile = path to output
+-r = use rarefaction to correct for differences in sample size of accessions, applies to
+        M+ algorithm only.
 -k kernelfile = use an MSTRAT .ker file to specify mandatory members of the 
         core.  The number of mandatory accessions must therefore be less than or equal to 
         mincoresize.  Option only applies to -m, and cannot be used with -a.

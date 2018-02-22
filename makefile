@@ -27,7 +27,7 @@ mp.o: mp.cpp m+.hpp
 	${CXX} ${FLAGS} -c mp.cpp
 
 aStar.o: aStar.cpp m+.hpp
-	${CXX} ${FLAGS} -c aStar.cpp -fopenmp
+	${CXX} ${FLAGS} -c aStar.cpp ${OMP}
 
 clean:
 	rm -rf *.o

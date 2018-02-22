@@ -25,8 +25,6 @@ struct Alfreq //contains allele frequencies for all alleles at one locus
 	vector<double> frequencies;
 };
 
-
-
 /***************CLASSES*****************/
 class Node
 {
@@ -119,6 +117,7 @@ class SortedCostNodeList
 
 
 
+
 /***************VARIABLES*****************/
 
 
@@ -152,6 +151,7 @@ void mp
 		int SamplingFreq,
 		int NumReplicates,
 		char* OutFilePath,
+		std::string Rarify,
 		std::string Kernel,
 		vector<int> KernelAccessionIndex,
 		vector<int> AccessionNameList,

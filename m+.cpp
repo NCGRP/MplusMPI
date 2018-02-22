@@ -734,6 +734,7 @@ int main( int argc, char* argv[] )
 	unsigned int i, j;
 	int b;
 	string DoM = "no"; //switch to perform M+ optimization
+	string Rarify = "no"; //switch to use rarefaction to correct allele count for sample size differences
 	string Kernel = "no"; //switch to include a mandatory set in the core
 	string Ideal = "no"; //switch to compute the ideal core, using A* algorithm
 	vector<std::string> KernelAccessionList;
@@ -751,6 +752,11 @@ int main( int argc, char* argv[] )
 			SamplingFreq = atoi(argv[i+3]);
 			NumReplicates = atoi(argv[i+4]);
 			OutFilePath = argv[i+5];
+		}
+
+		if ( string(argv[i]) == "-r" ) 
+    	{
+        	Rarify = "yes";
 		}
 
 		if ( string(argv[i]) == "-k" ) 
@@ -819,6 +825,11 @@ int main( int argc, char* argv[] )
 			cout << "    SamplingFreq = " << SamplingFreq << "\n";
 			cout << "    NumReplicates = " << NumReplicates << "\n";
 			cout << "    OutFilePath = " << OutFilePath << "\n";
+		}
+		if (Rarify == "yes")
+		{
+			cout << "  -r invoked:\n";
+			cout << "    Using rarefaction for M+ search\n";
 		}
 		if (Kernel == "yes") 
 		{
@@ -1296,6 +1307,7 @@ int main( int argc, char* argv[] )
 		SamplingFreq,
 		NumReplicates,
 		OutFilePath,
+		Rarify,
 		Kernel,
 		KernelAccessionIndex,
 		AccessionNameList,

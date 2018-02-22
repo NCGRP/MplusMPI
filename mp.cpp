@@ -1,6 +1,6 @@
 #include "m+.hpp"
 	
-int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> ActiveMaxAllelesList, std::string Standardize, double& RandomActiveDiversity, double& AltRandomActiveDiversity)
+int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> ActiveMaxAllelesList, std::string Standardize, std::string Rarify, double& RandomActiveDiversity, double& AltRandomActiveDiversity)
 {
 	/*AlleleList structure:
 		  Pop1..r
@@ -20,25 +20,139 @@ int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> A
 	}
 	else
 	{
-		//use set to eliminate redundancies
-		for (i=0;i<NumLoci;i++)
+		if (Rarify == "no")
 		{
-
-			//3. pass alleles from the same locus into a single set, for all populations in core, to remove redundancies
-			AlleleSet.clear(); //clear AlleleSet
-			for (j=0;j<CoreSize;j++)
+			//use set to eliminate redundancies
+			for (i=0;i<NumLoci;i++)
 			{
-				CurrLoc = AlleleList[j][i];
-				for (k=0;k<CurrLoc.size();++k)
+
+				//3. pass alleles from the same locus into a single set, for all populations in core, to remove redundancies
+				AlleleSet.clear(); //clear AlleleSet
+				for (j=0;j<CoreSize;j++)
 				{
-					AlleleSet.insert(CurrLoc[k]); //locus i for all population j
+					CurrLoc = AlleleList[j][i];
+					for (k=0;k<CurrLoc.size();++k)
+					{
+						AlleleSet.insert(CurrLoc[k]); //locus i for all population j
+					}
 				}
+			
+				if (AlleleSet.size() == 0) M=0;
+				else M=AlleleSet.size();
+				
+				Mlist[i] = M;
+			}
+		}
+		else if (Rarify == "yes")
+		{
+			int count;
+			int limit; 
+			int nrow = NumLoci+1; //rows are loci
+			int ncol = CoreSize+1; //cols are accessions
+			stringstream inss;
+			set<int>::iterator it;
+			//create a stringstream table with allele frequencies from AlleleList for input into rtk codes
+			for (i=0;i<NumLoci;i++)
+			{
+				//determine unique alleles using a set
+				AlleleSet.clear();
+				for (j=0;j<CoreSize;j++)
+				{
+					CurrLoc = AlleleList[j][i];
+					for (k=0;k<CurrLoc.size();++k)
+					{
+						AlleleSet.insert(CurrLoc[k]); //unique alleles at locus i for all population j
+					}
+				}
+			
+				//count frequency of each allele at locus i for all populations k
+				if (AlleleSet.size() == 0) M=0;
+				else 
+				{
+					inss.str(""); //clear the stringstream
+					inss.clear(); //reset the stringstream
+					inss << "out"; //fill the ss header
+					for (k=0;k<CoreSize;k++) inss << "\tp" << k;
+					inss << "\n";
+					
+					for (it=AlleleSet.begin(); it!=AlleleSet.end(); ++it)
+					{
+						j = *it; //dereference to get each unique allele from set
+						inss << "a" << j; //add row label
+						//for each accession in core
+						for (k=0;k<CoreSize;k++)
+						{
+							CurrLoc = AlleleList[k][i];	//all alleles at locus i in population k
+							inss << "\t" << std::count(CurrLoc.begin(), CurrLoc.end(), j); //count number of allele j in pop k, add to stringstream
+						}
+						inss << "\n";
+					}
+					
+					//send stringstream table to rtk codes
+					
+					//calculate rarified M for current locus as sum of rarified allele count
+					
+				}
+				
+				
+				
+
+
+set<int>::iterator it;
+for(it=AlleleSet.begin(); it!=AlleleSet.end(); ++it)
+{
+int ans = *it;
+    
+cout << ans << endl;
+}
+
+
+
+
+
+	//make a demo input file as a stringstream, for further processing
+	stringstream in;
+	in << "out\tp1\tp2\tp3\tp4\n";
+	in << "a1\t0\t1\t2\t4\n";
+	in << "a2\t0\t1\t0\t10\n";
+	in << "a3\t52\t1\t0\t10\n";
+	in << "a4\t0\t0\t0\t20\n";
+	in << "a5\t1\t1\t2\t40\n";
+
+				
+for(size_t i = 0; i < numbers.size(); i++)
+{
+    size_t count = 1;
+
+    size_t limit = numbers.size() - 1;
+    while(i < limit  && numbers[i] == numbers[i+1])
+    {
+        count++;
+        i++;
+    }
+
+    std::cout << numbers[i] << "\t" << count << std::endl;
+} 
+
+
+				
+				
+				
+				
+				M=AlleleSet.size();
+				
+				
+				
+				Mlist[i] = M;
+				
 			}
 			
-			if (AlleleSet.size() == 0) M=0;
-			else M=AlleleSet.size();
 			
-			Mlist[i] = M;
+			
+
+			//assemble result into Mlist
+			
+		
 		}
 		
 		//5. standardize the M values to the maximum possible number of alleles at that locus, 
@@ -121,6 +235,7 @@ void mp(
 	int SamplingFreq,
 	int NumReplicates,
 	char* OutFilePath,
+	std::string Rarify,
 	std::string Kernel,
 	vector<int> KernelAccessionIndex,
 	vector<int> AccessionNameList,
@@ -279,7 +394,7 @@ void mp(
 		vector<vector<vector<int> > > CoreAlleles;
 		vector<vector<vector<int> > > TdTempList;
 		vector<vector<vector<int> > > BestSubCoreAlleles;
-		std::string Standardize = "yes";  //a run that mimics the MSTRAT approach can be accomplished by setting Standardize="no", and setting up the var file so that each column in the .dat file is treated as a single locus, rather than two (or more) adjacent columns being treated as a single codominant locus.
+		std::string Standardize = "yes";  //a run that mimics the MSTRAT approach can be accomplished by setting Standardize="no", ensuring that Rarify="no", and setting up the var file so that each column in the .dat file is treated as a single locus, rather than two (or more) adjacent columns being treated as a single codominant locus.
 		vector<int> AccessionsInCore;
 		vector<int> AccessionsInSubCore;
 		vector<int> BestSubCore;
@@ -376,7 +491,7 @@ void mp(
 			AlleleList.clear();
 			AlleleList = CoreAlleles;
 	
-			MyCalculateDiversity(AlleleList, ActiveMaxAllelesList, Standardize, RandomActiveDiversity, AltRandomActiveDiversity);
+			MyCalculateDiversity(AlleleList, ActiveMaxAllelesList, Standardize, Rarify, RandomActiveDiversity, AltRandomActiveDiversity);
 			//in MyCalculateDiversity, latter two variables are updated as references
 			//save them away in non-updated variables
 			StartingRandomActiveDiversity = RandomActiveDiversity;
@@ -390,7 +505,7 @@ void mp(
 				b = AccessionsInCore[j];
 				AlleleList[j] = TargetAlleleByPopList[b];
 			}
-			MyCalculateDiversity(AlleleList, TargetMaxAllelesList, Standardize, RandomTargetDiversity, AltRandomTargetDiversity);
+			MyCalculateDiversity(AlleleList, TargetMaxAllelesList, Standardize, Rarify, RandomTargetDiversity, AltRandomTargetDiversity);
 
 
 			//BEGIN OPTIMIZATION
@@ -414,7 +529,7 @@ void mp(
 				
 				AlleleList = CoreAlleles;
 				
-				MyCalculateDiversity(AlleleList, ActiveMaxAllelesList, Standardize, RandomActiveDiversity, AltRandomActiveDiversity);
+				MyCalculateDiversity(AlleleList, ActiveMaxAllelesList, Standardize, Rarify, RandomActiveDiversity, AltRandomActiveDiversity);
 				best = RandomActiveDiversity; //best is equivalent to OptimizedActiveDiversity
 				AltOptimizedActiveDiversity = AltRandomActiveDiversity;
 			}
@@ -464,7 +579,7 @@ void mp(
 						--5.5. simultaneous to the calculation, keep track of which subcore is best
 						*/
 			
-						MyCalculateDiversity(AlleleList, ActiveMaxAllelesList, Standardize, RandomActiveDiversity, AltRandomActiveDiversity);
+						MyCalculateDiversity(AlleleList, ActiveMaxAllelesList, Standardize, Rarify, RandomActiveDiversity, AltRandomActiveDiversity);
 						nnew = RandomActiveDiversity;
 
 						if (nnew >= best) // >= allows sideways movement during hill climbing
@@ -521,7 +636,7 @@ void mp(
 						AlleleList = TdTempList;
 			
 						//calculate diversity
-						MyCalculateDiversity(AlleleList, ActiveMaxAllelesList, Standardize, nnew, TempAltOptimizedActiveDiversity); 
+						MyCalculateDiversity(AlleleList, ActiveMaxAllelesList, Standardize, Rarify, nnew, TempAltOptimizedActiveDiversity); 
 		
 						//test whether current diversity is higher than the best diversity found so far
 						if (nnew >= best) // >= allows sideways movement during hill climbing
@@ -559,7 +674,7 @@ void mp(
 			}
 	
 			//calculate diversity at target loci based upon the optimized core selection
-			MyCalculateDiversity(AlleleList, TargetMaxAllelesList, Standardize, OptimizedTargetDiversity, AltOptimizedTargetDiversity);
+			MyCalculateDiversity(AlleleList, TargetMaxAllelesList, Standardize, Rarify, OptimizedTargetDiversity, AltOptimizedTargetDiversity);
 
 			//8. Assemble stats for optimized core and add to output vectors
 			//create a list of accession names from the list of accession ID's in AccessionsInCore
