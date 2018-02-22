@@ -1,3 +1,4 @@
+#include "m+.hpp"
 #include "rare.hpp"
 
 //code in rare.cpp is derived from https://github.com/hildebra/Rarefaction
@@ -147,7 +148,7 @@ cerr << "Cant open file " << inF << endl; std::exit(11);
 	string line;
 	int ini_ColPerRow = iniCols(in);
 	//int ini_ColPerRow = iniCols(in);
-	cout << "ini_ColPerRow=" << ini_ColPerRow << "\n";
+	//cout << "ini_ColPerRow=" << ini_ColPerRow << "\n";
 	
 	in.clear(); //remove EOF flag
 	in.seekg (0, ios::beg); //reset the stringstream to beginning
@@ -427,7 +428,7 @@ vector<double> parseDepths(string a){
     return vect;
 }
 
-options::options(int argc, char** argv) :input(""), output(""), mode(""),
+options::options(void) :input(""), output(""), mode(""),
     referenceDir(""), referenceFile(""),
     depth(), repeats(10), write(0), threads(1), writeSwap(true), verbose(false), oldMapStyle(false),
     modDB(""), modRedund(5), modEnzCompl(0.5f), modModCompl(0.5f), modWrXtraInfo(false), 
@@ -719,9 +720,10 @@ void smplVec::shuffle_singl() {
 }
 
 int main(int argc, char* argv[])
+//int rtkrare(stringstream& in)
 {
 
-    options* opts = new options(argc, argv);
+    options* opts = new options();
 
 /*  string inF = opts->input;
     string outF = opts->output;
@@ -819,7 +821,7 @@ int main(int argc, char* argv[])
                 DivEsts * div   = new DivEsts();
                 slots[j].fut    = async(std::launch::async, calcDivRar, i, Mo, div, opts, &abundInRow, &occuencesInRow);
 
-                // send user some feedback
+/*                // send user some feedback
                 int thirds = 1;
                 if(smpls > 5){
                     thirds = (int) ceil((smpls-3)/3);
@@ -832,7 +834,7 @@ int main(int argc, char* argv[])
                 }else if( i == 3){
                     cout << "..." << std::endl ;
                 }
-
+*/
                 i++;
 
             }

@@ -1,3 +1,11 @@
+#include "m+.hpp"
+#include <map>
+#include <unordered_map>
+#include <future>
+#include <chrono>
+#include <mutex>
+
+/*
 #include <algorithm>
 #include <fstream>
 #include <functional>
@@ -12,12 +20,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <vector>
-
-#include <map>
-#include <unordered_map>
-#include <future>
-#include <chrono>
-#include <mutex>
+*/
 
 
 using namespace std;
@@ -54,8 +57,9 @@ template<typename T> T getMedian(vector<T>& in){
 struct options
 {
 public:
-	options(int argc, char** argv);
-	options(std::string, std::string , int repeats, std::vector<double> depth, int NoOfMatrices, bool verbose, unsigned int threads);
+	//options(int argc, char** argv);
+	//options(std::string, std::string , int repeats, std::vector<double> depth, int NoOfMatrices, bool verbose, unsigned int threads);
+	options(void);
 	void print_rare_details();
 	//~options();
 

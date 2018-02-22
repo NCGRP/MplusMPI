@@ -96,48 +96,6 @@ int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> A
 				
 				
 				
-
-
-set<int>::iterator it;
-for(it=AlleleSet.begin(); it!=AlleleSet.end(); ++it)
-{
-int ans = *it;
-    
-cout << ans << endl;
-}
-
-
-
-
-
-	//make a demo input file as a stringstream, for further processing
-	stringstream in;
-	in << "out\tp1\tp2\tp3\tp4\n";
-	in << "a1\t0\t1\t2\t4\n";
-	in << "a2\t0\t1\t0\t10\n";
-	in << "a3\t52\t1\t0\t10\n";
-	in << "a4\t0\t0\t0\t20\n";
-	in << "a5\t1\t1\t2\t40\n";
-
-				
-for(size_t i = 0; i < numbers.size(); i++)
-{
-    size_t count = 1;
-
-    size_t limit = numbers.size() - 1;
-    while(i < limit  && numbers[i] == numbers[i+1])
-    {
-        count++;
-        i++;
-    }
-
-    std::cout << numbers[i] << "\t" << count << std::endl;
-} 
-
-
-				
-				
-				
 				
 				M=AlleleSet.size();
 				
