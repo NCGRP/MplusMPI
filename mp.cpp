@@ -45,23 +45,19 @@ int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> A
 		}
 		else if (Rarify == "yes")
 		{
-			int count;
-			int limit; 
-			int nrow = NumLoci+1; //rows are loci
-			int ncol = CoreSize+1; //cols are accessions
 			stringstream inss;
-			set<int>::iterator it;
+			int d;
 			//create a stringstream table with allele frequencies from AlleleList for input into rtk codes
 			for (i=0;i<NumLoci;i++)
 			{
-				//determine unique alleles using a set
+				//determine unique alleles for current core using a set
 				AlleleSet.clear();
 				for (j=0;j<CoreSize;j++)
 				{
 					CurrLoc = AlleleList[j][i];
 					for (k=0;k<CurrLoc.size();++k)
 					{
-						AlleleSet.insert(CurrLoc[k]); //unique alleles at locus i for all population j
+						AlleleSet.insert(CurrLoc[k]); //unique alleles at locus i for all population j in core
 					}
 				}
 			
@@ -72,40 +68,46 @@ int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> A
 					inss.str(""); //clear the stringstream
 					inss.clear(); //reset the stringstream
 					inss << "out"; //fill the ss header
-					for (k=0;k<CoreSize;k++) inss << "\tp" << k;
+					for (j=0;j<CoreSize;++j) inss << "\tp" << j;
 					inss << "\n";
 					
-					for (it=AlleleSet.begin(); it!=AlleleSet.end(); ++it)
+					for (set<int>::iterator it=AlleleSet.begin(); it!=AlleleSet.end(); ++it)
 					{
-						j = *it; //dereference to get each unique allele from set
-						inss << "a" << j; //add row label
+						d = *it; //dereference to get each unique allele from set
+						inss << "a" << d; //add row label
 						//for each accession in core
-						for (k=0;k<CoreSize;k++)
+						for (j=0;j<CoreSize;++j)
 						{
-							CurrLoc = AlleleList[k][i];	//all alleles at locus i in population k
-							inss << "\t" << std::count(CurrLoc.begin(), CurrLoc.end(), j); //count number of allele j in pop k, add to stringstream
+							CurrLoc = AlleleList[j][i];	//all alleles at locus i in population j
+							inss << "\t" << std::count(CurrLoc.begin(), CurrLoc.end(), d); //count number of allele d in pop j, add to stringstream
+						
+							cout << "j i = " << j << " " << i << ": ";
+							for (std::vector<int>::const_iterator q = CurrLoc.begin(); q != CurrLoc.end(); ++q) std::cout << *q << ' ';
+							cout << "\n";
+						
 						}
 						inss << "\n";
 					}
 					
-					//send stringstream table to rtk codes
-					
+					//send stringstream table to rtk codes for rarification
+
+
 					//calculate rarified M for current locus as sum of rarified allele count
 					
 				}
 				
+				sleep(2);
+				std::cout << inss.rdbuf();
+				//getchar();
+
 				
 				
+				//M=AlleleSet.size();
+				//Mlist[i] = M;
 				
-				M=AlleleSet.size();
-				
-				
-				
-				Mlist[i] = M;
-				
-			}
+			} //NumLoci
 			
-			
+
 			
 
 			//assemble result into Mlist
@@ -589,7 +591,6 @@ void mp(
 						//assemble the allelelist for the core
 						TdTempList = BestSubCoreAlleles;
 						TdTempList.resize( TdTempList.size() + 1 );
-						//TdTempList.push_back( ActiveAlleleByPopList[i] );
 						TdTempList[TdTempList.size()-1] = ActiveAlleleByPopList[bsc];
 						AlleleList = TdTempList;
 			

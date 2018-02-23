@@ -18,7 +18,7 @@ OMP = -fopenmp
 FLAGS = --std=gnu++11 -O3 -Wall
 
 all: m+.o mp.o aStar.o rare.o
-	${CXX} ${FLAGS} ${OMP}-o m+ m+.o mp.o aStar.o rare.o
+	${CXX} ${FLAGS} -o m+ m+.o mp.o aStar.o rare.o ${OMP}
 
 m+.o: m+.cpp m+.hpp
 	${CXX} ${FLAGS} -c m+.cpp
@@ -27,7 +27,7 @@ mp.o: mp.cpp m+.hpp
 	${CXX} ${FLAGS} -c mp.cpp
 
 aStar.o: aStar.cpp m+.hpp
-	${CXX} ${FLAGS} -c ${OMP} aStar.cpp
+	${CXX} ${FLAGS} -c aStar.cpp ${OMP}
 
 rare.o: rare.cpp rare.hpp
 	${CXX} ${FLAGS} -c rare.cpp

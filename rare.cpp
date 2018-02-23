@@ -176,7 +176,7 @@ cerr << "Cant open file " << inF << endl; std::exit(11);
 	string segments;
 	string rowID = "";
 	int geneCnt(0);
-	int cntNA(0);
+//	int cntNA(0);
 	//vector<mat_fl> emptyVec(ini_ColPerRow, (mat_fl)0);
 	mat.resize(ini_ColPerRow -1, vector<mat_fl>(0));
 	while (safeGetline(in, line)) {
@@ -263,9 +263,7 @@ cerr << "Cant open file " << inF << endl; std::exit(11);
 	}
 //	in.close();
 	maxCols = (int)mat.size();
-	#ifdef notRpackage
-	std::cout << "Read " << geneCnt << " genes" << endl;
-	#endif
+//	std::cout << "Read " << geneCnt << " genes" << endl;
 
 	if (geneCnt == 0) {
 		cerr << "No genes read.. aborting\n";
@@ -719,8 +717,8 @@ void smplVec::shuffle_singl() {
     std::shuffle(std::begin(arr), std::end(arr), engine);	
 }
 
-int main(int argc, char* argv[])
-//int rtkrare(stringstream& in)
+//int main(int argc, char* argv[])
+int rtkrare(stringstream& in)
 {
 
     options* opts = new options();
@@ -734,14 +732,14 @@ int main(int argc, char* argv[])
     string refD = opts->referenceDir;
 */
 	//make a demo input file as a stringstream, for further processing
-	stringstream in;
+/*	stringstream in;
 	in << "out\tp1\tp2\tp3\tp4\n";
 	in << "a1\t0\t1\t2\t4\n";
 	in << "a2\t0\t1\t0\t10\n";
 	in << "a3\t52\t1\t0\t10\n";
 	in << "a4\t0\t0\t0\t20\n";
 	in << "a5\t1\t1\t2\t40\n";
-
+*/
 
 	Matrix* Mo = new Matrix(in);//no arg for outfile &  hierachy | gene subset
     vector<DivEsts*> divvs(Mo->smplNum(), NULL);
