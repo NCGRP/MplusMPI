@@ -287,7 +287,8 @@ int MyReduceToRef(vector<vector<vector<int> > > AllAlleleByPopList, vector<int> 
 	return 0;
 }
 
-int MyProcessDatFileIII(char* DatFileBuffer, int procid, vector<int> AllColumnIDList, vector<vector<int> > ColKeyToAllAlleleByPopList, vector<vector<set<int> > >& AllAlleleByPopListSet, vector<std::string>& FullAccessionNameList, vector<std::string>& IndivPerPop, vector<int>& AllAlleles)
+//int MyProcessDatFileIII(char* DatFileBuffer, int procid, vector<int> AllColumnIDList, vector<vector<int> > ColKeyToAllAlleleByPopList, vector<vector<set<int> > >& AllAlleleByPopListSet, vector<std::string>& FullAccessionNameList, vector<std::string>& IndivPerPop, vector<int>& AllAlleles)
+int MyProcessDatFileIII(char* DatFileBuffer, int procid, vector<int> AllColumnIDList, vector<vector<int> > ColKeyToAllAlleleByPopList, vector<vector<vector<int> > >& AllAlleleByPopList, vector<std::string>& FullAccessionNameList, vector<std::string>& IndivPerPop, vector<int>& AllAlleles, std::string Rarify)
 {
 	//declare variables
 	std::string foo;
@@ -302,6 +303,15 @@ int MyProcessDatFileIII(char* DatFileBuffer, int procid, vector<int> AllColumnID
 	vector<std::string> ListToFilter;
 	std::string IsNewPop = "no";
 	vector<std::string>::iterator it;
+	
+	//initialize important data structures, unsized
+	vector<vector<set<int> > > AllAlleleByPopListSet; //structure of this 3D vector is:
+	// { { {pop1,loc1 alleles},{pop1,loc2 alleles},...}, { {pop2,loc1 alleles},{pop2,loc2 alleles},...} } }
+	// this is the same structure as the vector<vector<vector<int> > > AllAlleleByPopList
+	// if Rarify == "yes", AllAlleleByPopList just becomes ByPop3d.  if Rarify == "no", ByPop3d is reduced
+	// to unique alleles at each locus using AllAlleleByPopListSet, then converted back into the vector
+	// AllAlleleByPopList, which is updated as a reference
+
 
 	unsigned int i,j,k,l;
 	vector<std::string> bufvec;
@@ -440,14 +450,18 @@ int MyProcessDatFileIII(char* DatFileBuffer, int procid, vector<int> AllColumnID
 
 	//stop the clock
 	time (&endm);
-	dif = difftime (endm,startm);
 	if (procid == 0) 
 	{
+		dif = difftime (endm,startm);
 		if (dif==1) cout << "    " << dif << " second.\n";	
 		else cout << "    " << dif << " seconds.\n";	
 	}
 
-	/*//print out ByPop3d
+
+
+
+
+/*	//print out ByPop3d
 	for (i=0;i<ByPop3d.size();++i)
 	{
 		cout << "Pop" << i << "\n";
@@ -461,54 +475,115 @@ int MyProcessDatFileIII(char* DatFileBuffer, int procid, vector<int> AllColumnID
 			cout << "\n";
 		}
 	
-	}*/
+	}
+*/
+
+
 
 	if (procid == 0) cout << "  Condensing data...\n";
 	time (&startm);
 
-	//resize AllAlleleByPopListSet
-	AllAlleleByPopListSet.resize(ByPop3d.size());//resize number of populations
-	for (i=0;i<AllAlleleByPopListSet.size();++i)
+	
+	
+	
+	if (Rarify == "yes")
 	{
-		AllAlleleByPopListSet[i].resize(ColKeyToAllAlleleByPopList.size()); //resize number of loci
+		AllAlleleByPopList.swap(ByPop3d); //swap vector so as not to incur memory hit
+
+ 		//stop the clock on Condensing data...
+		time (&endm);
+		if (procid == 0) 
+		{
+			dif = difftime (endm,startm);
+			if (dif==1) cout << "    " << dif << " second.\n";	
+			else cout << "    " << dif << " seconds.\n";	
+		}
+	}
+	else if (Rarify == "no")
+	{
+		//resize AllAlleleByPopListSet
+		AllAlleleByPopListSet.resize(ByPop3d.size());//resize number of populations
+		for (i=0;i<AllAlleleByPopListSet.size();++i)
+		{
+			AllAlleleByPopListSet[i].resize(ColKeyToAllAlleleByPopList.size()); //resize number of loci
 																		   //the index in ColKey is the locus index in AllAllelesByPopList level 2
 																		   //the value of ColKey is the index of the allele in ByPop3d level 3
-	}
+		}
 		
+		//calculate size of AllAlleles
+		AllAlleles.reserve(row*AllColumnIDList.size());
 
-	//calculate size of AllAlleles
-	AllAlleles.reserve(row*AllColumnIDList.size());
-	
-	//condense alleles by locus in AllAllelesByPopList, within each population
-	int AlleleIndex;
-	for (i=0;i<ByPop3d.size();++i) //go thru pops
-	{
-		for (j=0;j<ByPop3d[i].size();++j) //go thru indivs
+		//condense alleles by locus in AllAllelesByPopList, within each population
+		int AlleleIndex;
+		for (i=0;i<ByPop3d.size();++i) //go thru pops
 		{
-			for (k=0;k<ColKeyToAllAlleleByPopList.size();++k) //go through each locus
+			for (j=0;j<ByPop3d[i].size();++j) //go thru indivs
 			{
-				for (l=0;l<ColKeyToAllAlleleByPopList[k].size();++l) //assign columns to loci
+				for (k=0;k<ColKeyToAllAlleleByPopList.size();++k) //go through each locus
 				{
-					AlleleIndex = ColKeyToAllAlleleByPopList[k][l];
-					int NewAllele = ByPop3d[i][j][AlleleIndex]; //get the allele in the specified column
-					AllAlleles.push_back(NewAllele); //add the allele to the list of all alleles, missing data included
-					if (NewAllele != -9999) //exclude missing data
-						AllAlleleByPopListSet[i][k].insert(NewAllele); //add the allele to the set of unique alleles at locus k, pop i	
+					for (l=0;l<ColKeyToAllAlleleByPopList[k].size();++l) //assign columns to loci
+					{
+						AlleleIndex = ColKeyToAllAlleleByPopList[k][l];
+						int NewAllele = ByPop3d[i][j][AlleleIndex]; //get the allele in the specified column
+						AllAlleles.push_back(NewAllele); //add the allele to the list of all alleles, missing data included
+						if (NewAllele != -9999) //exclude missing data
+							AllAlleleByPopListSet[i][k].insert(NewAllele); //add the allele to the set of unique alleles at locus k, pop i	
+					}
 				}
 			}
 		}
+	
+		//stop the clock on Condensing data...
+		time (&endm);
+		if (procid == 0) 
+		{
+			dif = difftime (endm,startm);
+			if (dif==1) cout << "    " << dif << " second.\n";	
+			else cout << "    " << dif << " seconds.\n";	
+		}
+		
+		//start the clock on Converting...
+		time_t startd,endd;
+		if (procid == 0) 
+		{
+			cout << "  Converting data structures...\n";
+			time (&startd);
+		}
+
+		
+		//resize AllAlleleByPopList
+		AllAlleleByPopList.resize(ByPop3d.size());//resize number of populations
+		for (i=0;i<AllAlleleByPopList.size();++i)
+		{
+			AllAlleleByPopList[i].resize(ColKeyToAllAlleleByPopList.size()); //resize number of loci
+		}
+		//convert set to vector for further processing
+		for (i=0;i<AllAlleleByPopList.size();++i)
+		{
+			for (j=0;j<AllAlleleByPopList[i].size();++j)
+			{
+				vector<int> ttvec(AllAlleleByPopListSet[i][j].begin(), AllAlleleByPopListSet[i][j].end()); //use constructor to convert set to vector	
+				AllAlleleByPopList[i][j] = ttvec;
+			}
+		}
+		vector<vector<set<int> > >().swap(AllAlleleByPopListSet); //clear variable, no longer needed
+	
+		//stop the clock on Converting...
+		if (procid == 0) 
+		{
+			time (&endd);
+			dif = difftime (endd,startd);
+			if (dif==1) cout << "    " << dif << " second.\n";	
+			else cout << "    " << dif << " seconds.\n";	
+		}
+	
 	}
+	
+	
+	
 	
 	vector<vector<vector<int> > >().swap(ByPop3d); //clear ByPop3d
 			
-	//stop the clock
-	time (&endm);
-	dif = difftime (endm,startm);
-	if (procid == 0) 
-	{
-		if (dif==1) cout << "    " << dif << " second.\n";	
-		else cout << "    " << dif << " seconds.\n";	
-	}
 
 
 	return 0;
@@ -603,7 +678,6 @@ void MyMakeRefAllelesByLocus(vector<vector<int> > RefAllelesIntoRows, vector<str
 	unsigned int i, j, k;
 	int locindex;
 	std::string locname, b;
-	vector<std::string> foo;
 	for (i=0;i<ActiveLociNameList.size();++i)
 	{
 		locname = ActiveLociNameList[i];
@@ -634,22 +708,22 @@ void MyMakeRefAllelesByLocus(vector<vector<int> > RefAllelesIntoRows, vector<str
 	
 	//update RefAllelesByLocus
 	RefAllelesByLocus = lola;
+
+/*	//print out each locus name followed by all the alleles found within it
+		vector<int> foo;
+		for (i=0;i<lola.size();++i)
+		{
+			cout << lola[i].first << " ";
+			foo = lola[i].second;
+			for (j=0;j<foo.size();++j)
+			{
+				cout << " " << foo[j];
+			}
+			cout << "\n";
+		}
+*/
 	
 	vector<std::pair<std::string, vector<int> > >().swap(lola); //clear lola
-
-	
-	//print out each locus name followed by all the alleles found within it
-	/*for (i=0;i<lola.size();++i)
-	{
-		cout << lola[i].first << "\n";
-		foo = lola[i].second;
-		for (j=0;j<foo.size();++j)
-		{
-			cout << " " << foo[j];
-		}
-		cout << "\n";
-	}
-	*/
 }
 
 //calculates allele frequencies for all alleles at all loci, updates vector of struct Alfreq, which contains the relational data
@@ -984,7 +1058,19 @@ int main( int argc, char* argv[] )
 	vector<std::string> IndivPerPop;
 	vector<int> AllAlleles;
 	
-	//switch for new MyProcessDatFileIII
+
+
+
+
+
+
+
+
+
+
+
+////////////old work/////////////
+/*	//switch for new MyProcessDatFileIII
 	vector<vector<set<int> > > AllAlleleByPopListSet; //structure of this 3D vector is:
 	// { { {pop1,loc1 alleles},{pop1,loc2 alleles},...}, { {pop2,loc1 alleles},{pop2,loc2 alleles},...} } }
 	
@@ -995,20 +1081,20 @@ int main( int argc, char* argv[] )
 	// { { {pop1,loc1 alleles},{pop1,loc2 alleles},...}, { {pop2,loc1 alleles},{pop2,loc2 alleles},...} } }
 	//sized to number of populations, number of loci.  last level left unsized
 	
-		/*//Print out lists of unique All alleles from AllAlleleByPopListSet
-		set<std::string> si;
+		//Print out lists of unique All alleles from AllAlleleByPopListSet
+		set<int> si;
 		for (i=0;i<AllAlleleByPopListSet.size() ;i++)
 		{
 			cout << "Population " << FullAccessionNameList[i] << "\n";
 			for (j=0;j<AllAlleleByPopListSet[i].size();j++)
 			{
-				cout << "Locus " << j << "\n";
+				cout << "  Locus " << j << "\n    ";
 				si = AllAlleleByPopListSet[i][j];
-				for (std::set<std::string>::iterator it=si.begin(); it!=si.end(); ++it)
+				for (std::set<int>::iterator it=si.begin(); it!=si.end(); ++it)
 					cout << *it << ",";
 				cout << "\n";
 			}
-		}*/
+		}
 
 	time_t startd,endd;
 	if (procid == 0) 
@@ -1022,20 +1108,12 @@ int main( int argc, char* argv[] )
 	{
 		for (j=0;j<AllAlleleByPopList[i].size();++j)
 		{
-			/*vector<int> ttvec;
-			ttvec.reserve(AllAlleleByPopListSet[i][j].size());
-			for(std::set<int>::iterator it=AllAlleleByPopListSet[i][j].begin(); it!=AllAlleleByPopListSet[i][j].end(); ++it)
-   				ttvec.push_back(*it);
-   			//std::cout << *it << std::endl;
-			*/			
-			
-			
 			vector<int> ttvec(AllAlleleByPopListSet[i][j].begin(), AllAlleleByPopListSet[i][j].end()); //use constructor to convert set to vector	
 			AllAlleleByPopList[i][j] = ttvec;
 		}
 	}
 	vector<vector<set<int> > >().swap(AllAlleleByPopListSet); //clear variable, no longer needed
-	
+
 	double dif = difftime (endd,startd);
 	if (procid == 0) 
 	{
@@ -1047,6 +1125,54 @@ int main( int argc, char* argv[] )
 		cout << "  Separating reference and target loci...\n";
 		time (&startd);
 	}
+*/
+
+
+
+////////////new work/////////////
+
+
+
+	vector<vector<vector<int> > > AllAlleleByPopList; //structure of this 3D vector is:
+	//vector<vector<vector<int> > > AllAlleleByPopList( AllAlleleByPopListSet.size(), vector<vector<int> >(UniqLociNamesList.size()) ); //structure of this 3D vector is:
+	// { { {pop1,loc1 alleles},{pop1,loc2 alleles},...}, { {pop2,loc1 alleles},{pop2,loc2 alleles},...} } }
+	
+	//Process the dat file
+	MyProcessDatFileIII(DatFileBuffer, procid, AllColumnIDList, ColKeyToAllAlleleByPopList, AllAlleleByPopList, FullAccessionNameList, IndivPerPop, AllAlleles, Rarify);
+
+	
+/*		//Print out lists of unique All alleles from AllAlleleByPopListSet
+		set<int> si;
+		for (i=0;i<AllAlleleByPopListSet.size() ;i++)
+		{
+			cout << "Population " << FullAccessionNameList[i] << "\n";
+			for (j=0;j<AllAlleleByPopListSet[i].size();j++)
+			{
+				cout << "  Locus " << j << "\n    ";
+				si = AllAlleleByPopListSet[i][j];
+				for (std::set<int>::iterator it=si.begin(); it!=si.end(); ++it)
+					cout << *it << ",";
+				cout << "\n";
+			}
+		}
+*/
+
+	time_t startd,endd;
+	double dif = difftime (endd,startd);
+	if (procid == 0) 
+	{
+		cout << "  Separating reference and target loci...\n";
+		time (&startd);
+	}
+
+
+
+
+
+////////////end work/////////////
+
+
+	
 
 	//sort AllAlleleByPopList into reference and target loci lists
 	vector<vector<vector<int> > > ActiveAlleleByPopList; 

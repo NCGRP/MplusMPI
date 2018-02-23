@@ -81,9 +81,9 @@ int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> A
 							CurrLoc = AlleleList[j][i];	//all alleles at locus i in population j
 							inss << "\t" << std::count(CurrLoc.begin(), CurrLoc.end(), d); //count number of allele d in pop j, add to stringstream
 						
-							cout << "j i = " << j << " " << i << ": ";
+							/*cout << "j i = " << j << " " << i << ": ";
 							for (std::vector<int>::const_iterator q = CurrLoc.begin(); q != CurrLoc.end(); ++q) std::cout << *q << ' ';
-							cout << "\n";
+							cout << "\n";*/
 						
 						}
 						inss << "\n";
@@ -96,8 +96,8 @@ int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> A
 					
 				}
 				
-				sleep(2);
-				std::cout << inss.rdbuf();
+				//sleep(2);
+				//std::cout << inss.rdbuf();
 				//getchar();
 
 				
