@@ -71,7 +71,7 @@ public:
   std::string map = "";
   std::vector<double> depth;
   long depthMin;
-  unsigned int repeats = 10;
+  unsigned int repeats;
   unsigned int write = 0;
   unsigned int threads = 1;
   bool writeSwap = true;
@@ -102,20 +102,21 @@ public:
 	//data vectors
 	vector<vector<long> > richness;
 	vector<vector<double> > shannon,simpson,invsimpson,chao1,eve;
+	vector<vector<vector<uint> > > cntsx; //contains the rarefied sampled frequency of each row
 	string SampleName;
 	int depth;
 };
 
 class smplVec{
 public:
-	smplVec(const string, const int);
+	//smplVec(const string, const int);
 	smplVec(const vector<mat_fl>&, const int);
 	~smplVec(){
 		//delete[] arr;
 	}
 	void rarefy(vector<double> ,string o,int rep,DivEsts*, vector<vector<rare_map>>& RareSample,
 		vector<string>& retCntsSampleName, string& skippedSample, vector<vector<vector<uint>>>* ,vector<vector<vector<uint>>>* , int=0,bool=false, bool=false);
-	long getRichness(rare_map& cnts);
+	//long getRichness(rare_map& cnts);
 	long getRichness(const vector<unsigned int>&);
 	//int maxSiz(){return vector<unsigned short>::max_size();}
 	vector < string > getRowNames(){ return(IDs); }
@@ -186,15 +187,15 @@ public:
 	Matrix(stringstream& in);
 	//Matrix(const string inF);
 	//read and write
-	Matrix(const string inF, const string, const string xtra, vector<string>& outFName, bool highLvl = false, bool NumericRowId = false, bool writeTmpFiles = true);
+	//Matrix(const string inF, const string, const string xtra, vector<string>& outFName, bool highLvl = false, bool NumericRowId = false, bool writeTmpFiles = true);
 	//read to mem
-	Matrix(const string inF, const string xtra, bool highLvl = false); 
+	//Matrix(const string inF, const string xtra, bool highLvl = false); 
 	//module abundance matrix
-	Matrix(const vector<string>& rnms, const vector<string>& cnms);
+	//Matrix(const vector<string>& rnms, const vector<string>& cnms);
 	//empty opbject
-	Matrix(void);
+	//Matrix(void);
 	//normalize on the fly on vector colSums
-	Matrix(const string inF, const string outF, vector< double> colsums, vector<string>colNmds);
+	//Matrix(const string inF, const string outF, vector< double> colsums, vector<string>colNmds);
 	~Matrix(void);
 	void addTtlSmpl(vector<mat_fl> x, int idx) { mat[idx] = x; }
 	void splitOnHDD(string out_seed);
@@ -277,7 +278,8 @@ struct job {
 };
 
 /***************FUNCTIONS*****************/
+/*
 void binaryStoreSample(options* opts, vector<vector< vector< string >> > & , rareStruct* , 
 	vector<string>& , string , vector<vector<string>>& , bool reshapeMap = false);
 void memoryStoreSample(options* opts, rareStruct* tmpRS, vector< vector< vector< rare_map >> >& MaRare,  vector<vector<string>>& cntsNames, bool reshapeMap);
-
+*/

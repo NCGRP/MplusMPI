@@ -483,12 +483,42 @@ int MyProcessDatFileIII(char* DatFileBuffer, int procid, vector<int> AllColumnID
 	if (procid == 0) cout << "  Condensing data...\n";
 	time (&startm);
 
-	
-	
-	
+	//When Rarify=yes, information on allele frequencies must be retained so all alleles are
+	//placed into the AllAlleleByPopList (excluding -9999 missing data).  When Rarify=no, 
+	//all alleles are passaged through a set (AllAlleleByPopListSet) so that only unique 
+	//alleles end up in AllAlleleByPopList.
 	if (Rarify == "yes")
 	{
-		AllAlleleByPopList.swap(ByPop3d); //swap vector so as not to incur memory hit
+		//resize AllAlleleByPopList
+		AllAlleleByPopList.resize(ByPop3d.size());//resize number of populations
+		for (i=0;i<AllAlleleByPopList.size();++i)
+		{
+			AllAlleleByPopList[i].resize(ColKeyToAllAlleleByPopList.size()); //resize number of loci
+		}
+		
+		//calculate size of AllAlleles
+		AllAlleles.reserve(row*AllColumnIDList.size());
+
+		//condense alleles by locus in AllAllelesByPopList, within each population
+		int AlleleIndex;
+		for (i=0;i<ByPop3d.size();++i) //go thru pops
+		{
+			for (j=0;j<ByPop3d[i].size();++j) //go thru indivs
+			{
+				for (k=0;k<ColKeyToAllAlleleByPopList.size();++k) //go through each locus
+				{
+					for (l=0;l<ColKeyToAllAlleleByPopList[k].size();++l) //assign columns to loci
+					{
+						AlleleIndex = ColKeyToAllAlleleByPopList[k][l];
+						int NewAllele = ByPop3d[i][j][AlleleIndex]; //get the allele in the specified column
+						AllAlleles.push_back(NewAllele); //add the allele to the list of all alleles, missing data included
+						if (NewAllele != -9999) //exclude missing data
+							AllAlleleByPopList[i][k].push_back(NewAllele); //add the allele to the set of unique alleles at locus k, pop i	
+					}
+				}
+			}
+		}
+		
 
  		//stop the clock on Condensing data...
 		time (&endm);
@@ -513,7 +543,7 @@ int MyProcessDatFileIII(char* DatFileBuffer, int procid, vector<int> AllColumnID
 		//calculate size of AllAlleles
 		AllAlleles.reserve(row*AllColumnIDList.size());
 
-		//condense alleles by locus in AllAllelesByPopList, within each population
+		//condense alleles by locus in AllAllelesByPopListSet, within each population
 		int AlleleIndex;
 		for (i=0;i<ByPop3d.size();++i) //go thru pops
 		{
@@ -579,13 +609,8 @@ int MyProcessDatFileIII(char* DatFileBuffer, int procid, vector<int> AllColumnID
 	
 	}
 	
-	
-	
-	
 	vector<vector<vector<int> > >().swap(ByPop3d); //clear ByPop3d
 			
-
-
 	return 0;
 }
 
@@ -612,6 +637,7 @@ vector<int> MyGetMaxs(vector<vector<vector<int> > > ActiveAlleleByPopList)
 		}
 		ActiveMaxAllelesList.push_back(NewSet.size()); //the set size after adding all populations for locus i is the maximum number of alleles
 	}
+	
 	return ActiveMaxAllelesList; 
 }
 
@@ -1140,23 +1166,6 @@ int main( int argc, char* argv[] )
 	//Process the dat file
 	MyProcessDatFileIII(DatFileBuffer, procid, AllColumnIDList, ColKeyToAllAlleleByPopList, AllAlleleByPopList, FullAccessionNameList, IndivPerPop, AllAlleles, Rarify);
 
-	
-/*		//Print out lists of unique All alleles from AllAlleleByPopListSet
-		set<int> si;
-		for (i=0;i<AllAlleleByPopListSet.size() ;i++)
-		{
-			cout << "Population " << FullAccessionNameList[i] << "\n";
-			for (j=0;j<AllAlleleByPopListSet[i].size();j++)
-			{
-				cout << "  Locus " << j << "\n    ";
-				si = AllAlleleByPopListSet[i][j];
-				for (std::set<int>::iterator it=si.begin(); it!=si.end(); ++it)
-					cout << *it << ",";
-				cout << "\n";
-			}
-		}
-*/
-
 	time_t startd,endd;
 	double dif = difftime (endd,startd);
 	if (procid == 0) 
@@ -1179,6 +1188,27 @@ int main( int argc, char* argv[] )
 	vector<vector<vector<int> > > TargetAlleleByPopList; 
 	MyReduceToRef(AllAlleleByPopList, ReferenceOrTargetKey, ActiveAlleleByPopList, TargetAlleleByPopList); //latter 2 variables updated as reference
 	
+	/*
+		//Print out lists alleles from AllAlleleByPopList
+		vector<int> si;
+		for (i=0;i<AllAlleleByPopList.size() ;i++)
+		{
+			cout << "Population " << FullAccessionNameList[i] << "\n";
+			for (j=0;j<AllAlleleByPopList[i].size();j++)
+			{
+				cout << "  Locus " << j << "\n    ";
+				si = AllAlleleByPopList[i][j];
+				for (std::vector<int>::iterator it=si.begin(); it!=si.end(); ++it)
+					cout << *it << ",";
+				cout << "\n";
+			}
+		}
+	*/
+
+
+
+
+
 	vector<vector<vector<int> > >().swap(AllAlleleByPopList); //clear variable, no longer needed
 		
 	if (procid == 0) 
@@ -1189,20 +1219,20 @@ int main( int argc, char* argv[] )
 		else cout << "    " << dif << " seconds.\n";	
 	}
 		
-		/*	
+	/*		
 		//Print out FullAccessionNameList
 		cout << "\n\nPopulation names\n";
-		for (i=0; i<FullAccessionNameList.size();i++) cout << FullAccessionNameList[i] << "\n";
+		for (unsigned int i=0; i<FullAccessionNameList.size();i++) cout << FullAccessionNameList[i] << "\n";
 		
 		//Print out lists of unique reference alleles from ActiveAlleleByPopList
 		cout << "ActiveAlleleByPopList:\n";
-		for (i=0; i<ActiveAlleleByPopList.size() ;i++)
+		for (unsigned int i=0; i<ActiveAlleleByPopList.size() ;i++)
 		{
 			cout << "Population " << i << "\n";
-			for (j=0;j<ActiveAlleleByPopList[i].size();j++)
+			for (unsigned int j=0;j<ActiveAlleleByPopList[i].size();j++)
 			{
 				cout << "Locus " << j << "\n";
-				for (k=0;k<ActiveAlleleByPopList[i][j].size();k++)
+				for (unsigned int k=0;k<ActiveAlleleByPopList[i][j].size();k++)
 				{
 					cout << ActiveAlleleByPopList[i][j][k] << ",";
 				}
@@ -1213,20 +1243,20 @@ int main( int argc, char* argv[] )
 		
 		//Print out lists of unique target alleles from TargetAlleleByPopList
 		cout << "TargetAlleleByPopList:\n";
-		for (i=0; i<TargetAlleleByPopList.size() ;i++)
+		for (unsigned int i=0; i<TargetAlleleByPopList.size() ;i++)
 		{
 			cout << "Population " << i << "\n";
-			for (j=0;j<TargetAlleleByPopList[i].size();j++)
+			for (unsigned int j=0;j<TargetAlleleByPopList[i].size();j++)
 			{
 				cout << "Locus " << j << "\n";
-				for (k=0;k<TargetAlleleByPopList[i][j].size();k++)
+				for (unsigned int k=0;k<TargetAlleleByPopList[i][j].size();k++)
 				{
 					cout << TargetAlleleByPopList[i][j][k] << ",";
 				}
 				cout << "\n";
 			}
 		}
-		*/
+	*/	
 		
 
 
@@ -1256,14 +1286,15 @@ int main( int argc, char* argv[] )
 		PopSizes.push_back(b); //synchronized with FullAccessionNameList
 		//cout << "b="<<b<<"\n";	
 	}
-	
-	/*/calculate allele frequencies
-	if (procid == 0) 
-	{
-		cout << "  Calculating allele frequencies...\n";
-		time (&startd);
-	}
+
+	/*
+		//print out PopSizes
+		for (unsigned int i = 0;i<PopSizes.size(); ++i) 
+		{
+			cout << "PopSizes[" << i << "]=" << PopSizes[i] << "\n";
+		}
 	*/
+	
 	if (procid == 0) 
 	{
 		cout << "  Calculating run specific parameters...\n";
@@ -1299,10 +1330,10 @@ int main( int argc, char* argv[] )
 		time (&startd);
 	}
 
-		/*
+	/*	
 		//print out structs containing allele frequencies
 		Alfreq laf;
-		vector<std::string> anames;
+		vector<int> anames;
 		vector<double> frqs;
 		for (i=0;i<AlleleFrequencies.size();++i)
 		{
@@ -1317,7 +1348,7 @@ int main( int argc, char* argv[] )
 				cout << " " << frqs[j] << "\n";
 			}
 		}
-		*/
+	*/	
 	
 	//from list of all accession names, generate an index that is used later to locate alleles belonging to specific accessions
 	vector<int> AccessionNameList;
@@ -1346,11 +1377,27 @@ int main( int argc, char* argv[] )
 	//reverse sort KernelAccessionIndex, necessary later
 	std::sort(KernelAccessionIndex.begin(), KernelAccessionIndex.end(), std::greater<int>());
 		
+
+//START HERE
+
 	//get maximum number of alleles possible at each locus for active and target
 	vector<int> ActiveMaxAllelesList, TargetMaxAllelesList;
 	ActiveMaxAllelesList = MyGetMaxs(ActiveAlleleByPopList);
 	TargetMaxAllelesList = MyGetMaxs(TargetAlleleByPopList);
+
+	/*
+		//print the *MaxAllelesList
+		for (unsigned int i=0;i<ActiveMaxAllelesList.size();++i)
+		{
+			cout << "ActiveMaxAllelesList[" << i << "]=" << ActiveMaxAllelesList[i] << "\n";
+		}
+		for (unsigned int i=0;i<TargetMaxAllelesList.size();++i)
+		{
+			cout << "TargetMaxAllelesList[" << i << "]=" << TargetMaxAllelesList[i] << "\n";
+		}
 		
+	*/
+
 	if (procid == 0) 
 	{
 		time (&endd);
@@ -1374,7 +1421,7 @@ int main( int argc, char* argv[] )
 		else
 			cout << "Input files processed.  Elapsed time = "<< dif << " seconds.\n\n";
 		
-		cout << "Number of accessions = " << NumberOfAccessions << ", Number of reference loci = " << NumLoci 
+			cout << "Number of accessions = " << NumberOfAccessions << ", Number of reference loci = " << NumLoci 
 			<< "\n  Number of target loci = "<< TargetAlleleByPopList[1].size();
 		if (Kernel == "yes") cout << ", Number of kernel accessions = " << KernelAccessionList.size() << "\n\n";
 		else cout << "\n\n";

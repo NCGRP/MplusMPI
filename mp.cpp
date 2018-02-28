@@ -89,30 +89,23 @@ int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> A
 						inss << "\n";
 					}
 					
-					//send stringstream table to rtk codes for rarification
+					//send stringstream table to rtk codes for rarification	
+					//rtkrare returns the median rarefied allele count, for the current locus, derived from all pops in core
+					M = rtkrare(inss);
 
-
-					//calculate rarified M for current locus as sum of rarified allele count
 					
+					/*
+					//calculate M for current locus as sum of per pop rarified allele count
+					M=0;
+					for(std::vector<int>::iterator it = rr.begin(); it != rr.end(); ++it)
+    					M += *it;
+    				*/
+    				//cout << "M=" << M << "\n";
 				}
 				
-				//sleep(2);
-				//std::cout << inss.rdbuf();
-				//getchar();
-
-				
-				
-				//M=AlleleSet.size();
-				//Mlist[i] = M;
+				Mlist[i] = M;
 				
 			} //NumLoci
-			
-
-			
-
-			//assemble result into Mlist
-			
-		
 		}
 		
 		//5. standardize the M values to the maximum possible number of alleles at that locus, 

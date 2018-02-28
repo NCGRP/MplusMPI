@@ -121,7 +121,8 @@ class SortedCostNodeList
 /***************VARIABLES*****************/
 
 
-/***************SHARED FUNCTIONS IN M+.cpp*****************/
+/***************SHARED FUNCTIONS IN rare.cpp*****************/
+int rtkrare(stringstream& in);
 
 
 /***************SHARED FUNCTIONS IN aStar.cpp*****************/

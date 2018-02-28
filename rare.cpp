@@ -7,17 +7,58 @@
 //2594–2595, https://doi.org/10.1093/bioinformatics/btx206
 
 //void medianDiv(const string outF, vector<DivEsts*>& inD, bool printDIV, options* opts)
-vector<long> medianDiv(vector<DivEsts*>& inD, bool printDIV, options* opts)
+int medianDiv(vector<DivEsts*>& inD, bool printDIV, options* opts)
 {
-    vector<long> rr(inD.size()); //initialize vector to hold rarefied allele count
+    /*vector<int> rr(inD.size()); //initialize vector to hold rarefied allele count
     for (size_t i = 0; i < inD.size(); i++){
 		for( uint di = 0; di < opts->depth.size(); di++){
-                   rr[i] = getMedian(inD[i]->richness[di]);
+                   rr[i] = (int)getMedian(inD[i]->richness[di]);
                    //cout << getMedian(inD[i]->richness[di]) << "\n";
                    //cout << "rr[" << i << "] = " << rr[i] << "\n";
     	}
     }
     return rr;
+	*/
+
+    vector<int> Mreps; //holds M diversity value for repeats
+    int M; //the median rarified allele count from repeats
+    
+    vector<uint> cnts;
+    vector<vector<uint> > rr(inD.size(),vector<uint>()); //holds the table reporting rarified allele count for each pop
+    for (size_t i=0;i<inD.size();i++){
+		for(uint j=0;j<inD[i]->cntsx.size();j++){
+			for (uint k=0;k<inD[i]->cntsx[j].size();++k){
+                //extract cnts, the listing of allele frequencies of occurrence from the vector of DivEsts divvs
+                cnts = inD[i]->cntsx[j][k];
+                rr[i] = cnts; //add current sample allele counts to table of all sample allele counts
+             }
+    	}
+    	//print out table of allele counts
+		for (uint z=0;z<rr.size();++z)
+		{
+			cout << "rr.size()=" << rr.size() << " rr[" << z << "].size()=" << rr[z].size() << "\n";
+			for (uint zi=0;zi<rr[z].size();++zi)
+			{
+				cout << rr[z][zi] << "\t";
+			}
+			cout << "\n";
+		}
+
+
+    }
+	return M;
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 int Matrix::iniCols(stringstream& in)
@@ -299,6 +340,7 @@ rareStruct* calcDivRar(int i, Matrix* Mo, DivEsts* div, options* opts,
     return tmpRS;
 }
 
+/*
 string printSimpleMap(const rare_map & vec, string outF, string id, vector<string> rowNames){
     // takes a map from the rarefaction function and writes the vector
     // to the disk.
@@ -319,7 +361,8 @@ string printSimpleMap(const rare_map & vec, string outF, string id, vector<strin
     out.close();
     return outF;
 }
-
+*/
+/*
 void binaryStoreSample(options* opts, vector<vector<vector< string >>>& tmpMatFiles, rareStruct* tmpRS, vector<string>& rowNames, string outF,  vector<vector<string>>& cntsNames, bool reshapeMap){
     // store vectors of rarefied matrix on hard disk for memory reduction
     if(reshapeMap){
@@ -358,6 +401,7 @@ void binaryStoreSample(options* opts, vector<vector<vector< string >>>& tmpMatFi
     }
 }
 
+
 void memoryStoreSample(options* opts, rareStruct* tmpRS, vector< vector< vector< rare_map >> >& MaRare,  vector<vector<string>>& cntsNames, bool reshapeMap){
     if(reshapeMap){
         vector < string > rowIDs = tmpRS->IDs;
@@ -391,6 +435,7 @@ void memoryStoreSample(options* opts, rareStruct* tmpRS, vector< vector< vector<
         }
     }
 }
+*/
 
 //minimal sum per column, used for rarefaction min raredep
 double Matrix::getMinColSum() {
@@ -428,7 +473,7 @@ vector<double> parseDepths(string a){
 
 options::options(void) :input(""), output(""), mode(""),
     referenceDir(""), referenceFile(""),
-    depth(), repeats(10), write(0), threads(1), writeSwap(true), verbose(false), oldMapStyle(false),
+    depth(), repeats(1), write(0), threads(1), writeSwap(true), verbose(false), oldMapStyle(false),
     modDB(""), modRedund(5), modEnzCompl(0.5f), modModCompl(0.5f), modWrXtraInfo(false), 
     modCollapse(false), calcCoverage(false),
 	modDescr(""), modHiera(""), xtra("") {
@@ -528,6 +573,7 @@ options::options(void) :input(""), output(""), mode(""),
 */
     }
 
+
 smplVec::smplVec(const vector<mat_fl>& vec, const int nt) :IDs(0),totSum(0),
     num_threads(nt), richness(-1), Shannon(-1.f){
         double cumSum(0.f);
@@ -568,6 +614,7 @@ smplVec::smplVec(const vector<mat_fl>& vec, const int nt) :IDs(0),totSum(0),
 //        }
     }
 
+/*
 smplVec::smplVec(const string inF, const int nt) :IDs(0),totSum(0), num_threads(nt),
     richness(-1),Shannon(-1.f) {
 
@@ -607,8 +654,8 @@ smplVec::smplVec(const string inF, const int nt) :IDs(0),totSum(0), num_threads(
 //            cerr<<"..\n";
 //        }
     }
+*/
 
-std::mutex rarefyMutex;
 void smplVec::rarefy(vector<double> depts, string ofile, int rep,
         DivEsts* divs, std::vector<vector<rare_map>> & RareSample,
         vector<string>& retCntsSampleName, string& skippedSample,
@@ -619,6 +666,7 @@ void smplVec::rarefy(vector<double> depts, string ofile, int rep,
     long dep;
     // resize divvs
     divs->richness.resize(depts.size());
+    divs->cntsx.resize(depts.size());
 //    divs->shannon.resize(depts.size());
 //    divs->simpson.resize(depts.size());
 //    divs->invsimpson.resize(depts.size());
@@ -648,7 +696,7 @@ void smplVec::rarefy(vector<double> depts, string ofile, int rep,
                 cnts[arr[i]]++;
             }
 
-
+		/*
             curIdx += dep;
             string t_out = ofile;
             if (rep!=1){
@@ -670,8 +718,13 @@ void smplVec::rarefy(vector<double> depts, string ofile, int rep,
                     retCntsSampleName[i] = divs->SampleName; // safe the sample name as well
                 }
             }
+       */     
+            
+            
             richness = 0;
             divs->richness[i].push_back(this->getRichness(cnts));
+            //divs->cntsx[i].push_back(vector<uint>()); //add vector<uint> cnts to my modified DivEsts class. cnts is a list of the random sampling frequency of alleles in each row.
+			divs->cntsx[i].push_back(cnts);
 //            vector<double> three = this->calc_div(cnts, 4);
 //            divs->shannon[i].push_back(three[0]);
 //            divs->simpson[i].push_back(three[1]);
@@ -700,11 +753,14 @@ void smplVec::rarefy(vector<double> depts, string ofile, int rep,
 long smplVec::getRichness(const vector<unsigned int>& cnts){
     richness = 0;
     for (size_t i = 0; i<cnts.size(); i++){
-        //out<<IDs[i]<<"\t"<<cnts[i]<<endl;
+        
+        //cout<<"IDs["<<i<<"]="<<IDs[i]<<"\t"<<cnts[i]<<endl;
+        
         if (cnts[i]>0){
             richness++;
         }
     }
+    cout << "richness=" << richness << "\n";
     return richness;
 }
 
@@ -759,17 +815,47 @@ int rtkrare(stringstream& in)
     // hold rarefied matrices
     // stores : repeats - sampels eg rows - vectors of columns
     //int NoOfMatrices = opts->write;
-    vector< vector< vector< rare_map > >> MaRare(opts->depth.size(), vector< vector< rare_map> > (opts->write));
-    std::vector<vector<string>> cntsNames(opts->depth.size(), vector<string>());
+    //vector< vector< vector< rare_map > >> MaRare(opts->depth.size(), vector< vector< rare_map> > (opts->write));
+    //std::vector<vector<string>> cntsNames(opts->depth.size(), vector<string>());
 
 
-    // abundance vectors to hold the number of occurences of genes per row
+    // declare and size abundance vectors to hold the number of occurences of genes per row
     // this will be used for Chao2 estimation
     vector<vector<vector<uint>>> occuencesInRow(opts->depth.size(), vector<vector<uint>>(opts->repeats, vector<uint>(Mo->rowNum(),0)));
     vector<vector<vector<uint>>> abundInRow(opts->depth.size(), vector<vector<uint>>(opts->repeats, vector<uint>(Mo->rowNum(),0)));
 
+	/*	
+		for (unsigned int i=0;i<occuencesInRow.size();++i)
+		{
+			for (unsigned int j=0;j<occuencesInRow[i].size();++j)
+			{
+				for (unsigned int k=0;k<occuencesInRow[i][j].size();++k)
+				{
+					cout <<"i:j:k=" << i << ":" << j << ":" << k << " " << occuencesInRow[i][j][k] << "\n";
+				}
+			}
+		}
+	
+		for (unsigned int i=0;i<abundInRow.size();++i)
+		{
+			for (unsigned int j=0;j<abundInRow[i].size();++j)
+			{
+				for (unsigned int k=0;k<abundInRow[i][j].size();++k)
+				{
+					cout <<"i:j:k=" << i << ":" << j << ":" << k << " " << abundInRow[i][j][k] << "\n";
+				}
+			}
+		}
+	*/
+
+
+
+
+
+
+
     //object to keep matrices
-    vector < vector < vector < string >> > tmpMatFiles(opts->depth.size(), vector<vector <string>>(opts->write));
+    //vector < vector < vector < string >> > tmpMatFiles(opts->depth.size(), vector<vector <string>>(opts->write));
     //cerr << "TH";
     // vector keeping all the slots
     vector < job > slots(opts->threads);
@@ -812,6 +898,8 @@ int rtkrare(stringstream& in)
             }
 
             // open new slots
+            // the parallel mechanism is: a sample (column), governed by i, is sent to independent threads
+            // to calculate diversity measures using calcDivRar(i,...)
             if( slots[j].inUse == false){
 
                 slots[j].inUse = true;
@@ -865,15 +953,48 @@ int rtkrare(stringstream& in)
             }
         }
 */
+                
         delete tmpRS;
         // free slot
         slots[j].inUse = false;
     }
 
-    //cout diversity only
-    vector<long> rr = medianDiv(divvs, true, opts);
-    for(uint j = 0; j < rr.size(); j++){
-		cout << "rr[" << j << "] = " << rr[j] << "\n";
-	}
-	return 0;
+    
+
+
+
+
+//START HERE USE newfound knowledge of divvs[i]->cntsx[0][0][0]
+    for (size_t i=0;i<divvs.size();i++){
+		for(uint j=0;j<divvs[i]->cntsx.size();j++){
+			for (uint k=0;k<divvs[i]->cntsx[j].size();++k){
+				for (uint l=0;l<divvs[i]->cntsx[j][k].size();++l){
+                	cout << "divvs[" << i <<"]->cntsx[" << j << "][" << k << "][" << l << "]=" << divvs[i]->cntsx[j][k][l] << "\n";
+                	//cout << "rr[" << i << "] = " << rr[i] << "\n";
+                }
+            }
+    	}
+
+    }
+    
+    
+    
+    
+    
+    
+
+    
+    
+    //calculate median allelic diversity from options::repeats=10 rarifications
+    //this value is the number of unique alleles found among all members of the subset
+   	int M = medianDiv(divvs, true, opts);
+    //vector<int> rr = medianDiv(divvs, true, opts);
+    
+    /*
+    	//print out rarefied allelic diversity
+		for(uint j = 0; j < rr.size(); j++){
+			cout << "rr[" << j << "] = " << rr[j] << "\n";
+		}
+	*/
+	return M;
 }
