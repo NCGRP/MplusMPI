@@ -6,59 +6,51 @@
 //analysis of large datasets, Bioinformatics, Volume 33, Issue 16, 15 August 2017, Pages 
 //2594–2595, https://doi.org/10.1093/bioinformatics/btx206
 
-//void medianDiv(const string outF, vector<DivEsts*>& inD, bool printDIV, options* opts)
 int medianDiv(vector<DivEsts*>& inD, bool printDIV, options* opts)
 {
-    /*vector<int> rr(inD.size()); //initialize vector to hold rarefied allele count
-    for (size_t i = 0; i < inD.size(); i++){
-		for( uint di = 0; di < opts->depth.size(); di++){
-                   rr[i] = (int)getMedian(inD[i]->richness[di]);
-                   //cout << getMedian(inD[i]->richness[di]) << "\n";
-                   //cout << "rr[" << i << "] = " << rr[i] << "\n";
-    	}
-    }
-    return rr;
-	*/
+	int M; //rarified allele count
 
-    vector<int> Mreps; //holds M diversity value for repeats
-    int M; //the median rarified allele count from repeats
-    
-    vector<uint> cnts;
-    vector<vector<uint> > rr(inD.size(),vector<uint>()); //holds the table reporting rarified allele count for each pop
-    for (size_t i=0;i<inD.size();i++){
+	vector<uint> cnts;
+	vector<vector<uint> > rr(inD.size(),vector<uint>()); //holds the table reporting rarified allele count for each pop
+	for (size_t i=0;i<inD.size();i++){
 		for(uint j=0;j<inD[i]->cntsx.size();j++){
 			for (uint k=0;k<inD[i]->cntsx[j].size();++k){
-                //extract cnts, the listing of allele frequencies of occurrence from the vector of DivEsts divvs
-                cnts = inD[i]->cntsx[j][k];
-                rr[i] = cnts; //add current sample allele counts to table of all sample allele counts
-             }
-    	}
-    	//print out table of allele counts
+				//extract cnts, the listing of allele frequencies of occurrence from the vector of DivEsts divvs
+				cnts = inD[i]->cntsx[j][k];
+				rr[i] = cnts; //add current sample allele counts to table of all sample allele counts
+			}
+		}
+	}
+
+	/*
+		//print out table of allele counts
 		for (uint z=0;z<rr.size();++z)
 		{
-			cout << "rr.size()=" << rr.size() << " rr[" << z << "].size()=" << rr[z].size() << "\n";
+			cout << "inD.size()=" << inD.size() << " opts->depth.size()=" << opts->depth.size() 
+				<< " rr.size()=" << rr.size() << " rr[" << z << "].size()=" << rr[z].size() << "\n";
 			for (uint zi=0;zi<rr[z].size();++zi)
 			{
 				cout << rr[z][zi] << "\t";
 			}
 			cout << "\n";
 		}
+	*/
+		
+		//sum "columns" in rr, if column sum > 0, an allele of that column type was found, so index up M
+		M=0;
+		for (uint i=0;i<rr[0].size();++i)
+		{
+			for (uint j=0;j<rr.size();++j)
+			{
+				if (rr[j][i]>0) 
+				{
+					M++;
+					break; //leave this column if an allele is found
+				}
+			}
+		}
 
-
-    }
 	return M;
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 int Matrix::iniCols(stringstream& in)
@@ -186,6 +178,7 @@ cerr << "Cant open file " << inF << endl; std::exit(11);
 	in << "a4\t0\t0\t0\t20\n";
 	in << "a5\t1\t1\t2\t40\n";
 */
+	
 	string line;
 	int ini_ColPerRow = iniCols(in);
 	//int ini_ColPerRow = iniCols(in);
@@ -223,8 +216,9 @@ cerr << "Cant open file " << inF << endl; std::exit(11);
 	while (safeGetline(in, line)) {
 		//while (getline(in, line, '\n')) {
 		cnt++;
-		if (line.substr(0, 1) == "#"){ continue; }
-		if (line.length()<5){ continue; }
+		if (line.substr(0, 1) == "#"){ continue; } //skip lines labeled with #
+		//if (line.length()<5){ continue; }  //original code assumed line label like "OTU 1", hence <5
+		if (line.length()<2){  continue; } //skip lines that contain no samples, assumes line label like "a1", hence <1
 		int cnt2(-2);
 		vector<string> taxa(0);
 		stringstream ss;
@@ -722,8 +716,9 @@ void smplVec::rarefy(vector<double> depts, string ofile, int rep,
             
             
             richness = 0;
-            divs->richness[i].push_back(this->getRichness(cnts));
-            //divs->cntsx[i].push_back(vector<uint>()); //add vector<uint> cnts to my modified DivEsts class. cnts is a list of the random sampling frequency of alleles in each row.
+            //below line is critical to normal functioning of rtk, not needed for M+
+            //divs->richness[i].push_back(this->getRichness(cnts));
+
 			divs->cntsx[i].push_back(cnts);
 //            vector<double> three = this->calc_div(cnts, 4);
 //            divs->shannon[i].push_back(three[0]);
@@ -749,20 +744,19 @@ void smplVec::rarefy(vector<double> depts, string ofile, int rep,
     }
 }
 
+//below function is critical to normal functioning of rtk, not needed for M+
 // vector version of diversity fuctions:
+/*
 long smplVec::getRichness(const vector<unsigned int>& cnts){
     richness = 0;
     for (size_t i = 0; i<cnts.size(); i++){
-        
-        //cout<<"IDs["<<i<<"]="<<IDs[i]<<"\t"<<cnts[i]<<endl;
-        
         if (cnts[i]>0){
             richness++;
         }
     }
-    cout << "richness=" << richness << "\n";
     return richness;
 }
+*/
 
 void smplVec::shuffle_singl() {
     //auto engine = std::default_random_engine{};
@@ -959,42 +953,24 @@ int rtkrare(stringstream& in)
         slots[j].inUse = false;
     }
 
+	/*
+		// print out some stats on the vector holding diversity values, divvs
+		for (size_t i=0;i<divvs.size();i++){
+			for(uint j=0;j<divvs[i]->cntsx.size();j++){
+				for (uint k=0;k<divvs[i]->cntsx[j].size();++k){
+					for (uint l=0;l<divvs[i]->cntsx[j][k].size();++l){
+						cout << "divvs[" << i <<"]->cntsx[" << j << "][" << k << "][" << l << "]=" << divvs[i]->cntsx[j][k][l] << "\n";
+						//cout << "rr[" << i << "] = " << rr[i] << "\n";
+					}
+				}
+			}
+		}
+    */
     
-
-
-
-
-//START HERE USE newfound knowledge of divvs[i]->cntsx[0][0][0]
-    for (size_t i=0;i<divvs.size();i++){
-		for(uint j=0;j<divvs[i]->cntsx.size();j++){
-			for (uint k=0;k<divvs[i]->cntsx[j].size();++k){
-				for (uint l=0;l<divvs[i]->cntsx[j][k].size();++l){
-                	cout << "divvs[" << i <<"]->cntsx[" << j << "][" << k << "][" << l << "]=" << divvs[i]->cntsx[j][k][l] << "\n";
-                	//cout << "rr[" << i << "] = " << rr[i] << "\n";
-                }
-            }
-    	}
-
-    }
-    
-    
-    
-    
-    
-    
-
-    
-    
-    //calculate median allelic diversity from options::repeats=10 rarifications
+    //calculate median allelic diversity from options::repeats=1 rarifications
+    //only 1 rarification is used because replication is controlled elsewhere in M+ (so "median" is meaningless)
     //this value is the number of unique alleles found among all members of the subset
    	int M = medianDiv(divvs, true, opts);
-    //vector<int> rr = medianDiv(divvs, true, opts);
-    
-    /*
-    	//print out rarefied allelic diversity
-		for(uint j = 0; j < rr.size(); j++){
-			cout << "rr[" << j << "] = " << rr[j] << "\n";
-		}
-	*/
+
 	return M;
 }

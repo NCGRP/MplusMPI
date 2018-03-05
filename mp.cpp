@@ -1,5 +1,35 @@
 #include "m+.hpp"
 	
+int MyDoRarify(int i, vector<vector<vector<int> > > AlleleList, std::set<int> AlleleSet, int CoreSize)
+{
+	std::stringstream inss;
+	vector<int> CurrLoc;
+	int d, j, M;
+			
+	//fill the ss header
+	inss << "out";
+	for (j=0;j<CoreSize;++j) inss << "\tp" << j;
+	inss << "\n";
+	
+	for (set<int>::iterator it=AlleleSet.begin(); it!=AlleleSet.end(); ++it)
+	{
+		d = *it; //dereference to get each unique allele from set
+		inss << "a" << d; //add row label
+		//for each accession in core
+		for (j=0;j<CoreSize;++j)
+		{
+			CurrLoc = AlleleList[j][i];	//all alleles at locus i in population j
+			inss << "\t" << std::count(CurrLoc.begin(), CurrLoc.end(), d); //count number of allele d in pop j, add to stringstream
+		}
+		inss << "\n";
+	}
+
+	//send stringstream table to rtk codes for rarification	
+	//rtkrare returns the median rarefied allele count, for the current locus, derived from all pops in core
+	M = rtkrare(inss);
+	return M;
+}
+
 int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> ActiveMaxAllelesList, std::string Standardize, std::string Rarify, double& RandomActiveDiversity, double& AltRandomActiveDiversity)
 {
 	/*AlleleList structure:
@@ -25,7 +55,6 @@ int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> A
 			//use set to eliminate redundancies
 			for (i=0;i<NumLoci;i++)
 			{
-
 				//3. pass alleles from the same locus into a single set, for all populations in core, to remove redundancies
 				AlleleSet.clear(); //clear AlleleSet
 				for (j=0;j<CoreSize;j++)
@@ -45,8 +74,8 @@ int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> A
 		}
 		else if (Rarify == "yes")
 		{
-			stringstream inss;
-			int d;
+//			stringstream inss;
+//			int d;
 			//create a stringstream table with allele frequencies from AlleleList for input into rtk codes
 			for (i=0;i<NumLoci;i++)
 			{
@@ -61,52 +90,23 @@ int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> A
 					}
 				}
 			
-				//count frequency of each allele at locus i for all populations k
-				if (AlleleSet.size() == 0) M=0;
-				else 
-				{
-					inss.str(""); //clear the stringstream
-					inss.clear(); //reset the stringstream
-					inss << "out"; //fill the ss header
-					for (j=0;j<CoreSize;++j) inss << "\tp" << j;
-					inss << "\n";
-					
-					for (set<int>::iterator it=AlleleSet.begin(); it!=AlleleSet.end(); ++it)
-					{
-						d = *it; //dereference to get each unique allele from set
-						inss << "a" << d; //add row label
-						//for each accession in core
-						for (j=0;j<CoreSize;++j)
-						{
-							CurrLoc = AlleleList[j][i];	//all alleles at locus i in population j
-							inss << "\t" << std::count(CurrLoc.begin(), CurrLoc.end(), d); //count number of allele d in pop j, add to stringstream
-						
-							/*cout << "j i = " << j << " " << i << ": ";
-							for (std::vector<int>::const_iterator q = CurrLoc.begin(); q != CurrLoc.end(); ++q) std::cout << *q << ' ';
-							cout << "\n";*/
-						
-						}
-						inss << "\n";
-					}
-					
-					//send stringstream table to rtk codes for rarification	
-					//rtkrare returns the median rarefied allele count, for the current locus, derived from all pops in core
-					M = rtkrare(inss);
-
-					
-					/*
-					//calculate M for current locus as sum of per pop rarified allele count
-					M=0;
-					for(std::vector<int>::iterator it = rr.begin(); it != rr.end(); ++it)
-    					M += *it;
-    				*/
-    				//cout << "M=" << M << "\n";
-				}
-				
-				Mlist[i] = M;
+				//perform the rarification, add the rarified allele count at this locus (i)
+				Mlist[i] = MyDoRarify(i, AlleleList, AlleleSet, CoreSize);
 				
 			} //NumLoci
 		}
+		/*
+				//print out the Mlist
+				for (unsigned int i=0;i<Mlist.size();++i)
+				{
+					cout << "Mlist[" << i << "]=" << Mlist[i] << " ";
+				}
+				cout << "\n";
+		*/
+
+
+
+
 		
 		//5. standardize the M values to the maximum possible number of alleles at that locus, 
 		//and add them up to get final estimate of standardized allelic diversity in the core.

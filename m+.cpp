@@ -1378,7 +1378,7 @@ int main( int argc, char* argv[] )
 	std::sort(KernelAccessionIndex.begin(), KernelAccessionIndex.end(), std::greater<int>());
 		
 
-//START HERE
+//START HERE--get the MaxAllelesLists working
 
 	//get maximum number of alleles possible at each locus for active and target
 	vector<int> ActiveMaxAllelesList, TargetMaxAllelesList;
@@ -1395,9 +1395,8 @@ int main( int argc, char* argv[] )
 		{
 			cout << "TargetMaxAllelesList[" << i << "]=" << TargetMaxAllelesList[i] << "\n";
 		}
-		
-	*/
-
+	*/		
+	
 	if (procid == 0) 
 	{
 		time (&endd);
