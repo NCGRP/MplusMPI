@@ -3,6 +3,7 @@
 #include <functional>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <math.h>
 #include <mpi.h>
 #include <numeric>
@@ -131,6 +132,7 @@ void printCLOSEDList(SortedCostNodeList CLOSEDlist);
 void printAllNodes(std::vector<Node> AllNodes);
 
 /***************FUNCTIONS SHARED BETWEEN FILES*****************/
+int MyDoRarify(int i, vector<vector<vector<int> > > AlleleList, std::set<int> AlleleSet, int CoreSize);
 int aStar 
 	(
 		char* IdealFilePath, 

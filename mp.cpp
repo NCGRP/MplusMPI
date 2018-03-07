@@ -8,7 +8,12 @@ int MyDoRarify(int i, vector<vector<vector<int> > > AlleleList, std::set<int> Al
 			
 	//fill the ss header
 	inss << "out";
-	for (j=0;j<CoreSize;++j) inss << "\tp" << j;
+	//for (j=0;j<CoreSize;++j) inss << "\tp" << j;
+	for (j=0;j<CoreSize;++j) 
+	{
+		if (AlleleList[j][i].size() == 0) continue; //skip populations with no alleles (due to missing data)
+		else inss << "\tp" << j;
+	}
 	inss << "\n";
 	
 	for (set<int>::iterator it=AlleleSet.begin(); it!=AlleleSet.end(); ++it)
@@ -18,11 +23,28 @@ int MyDoRarify(int i, vector<vector<vector<int> > > AlleleList, std::set<int> Al
 		//for each accession in core
 		for (j=0;j<CoreSize;++j)
 		{
-			CurrLoc = AlleleList[j][i];	//all alleles at locus i in population j
-			inss << "\t" << std::count(CurrLoc.begin(), CurrLoc.end(), d); //count number of allele d in pop j, add to stringstream
+			if (AlleleList[j][i].size() == 0) continue; //skip populations with no alleles (due to missing data)
+			else 
+			{
+				CurrLoc = AlleleList[j][i];	//all alleles at locus i in population j
+				inss << "\t" << std::count(CurrLoc.begin(), CurrLoc.end(), d); //count number of allele d in pop j, add to stringstream
+			}
 		}
 		inss << "\n";
 	}
+	
+
+	/*
+		for (set<int>::iterator it=AlleleSet.begin(); it!=AlleleSet.end(); ++it) cout << "AlleleSet[]=" << (*it) << "\n";
+		cout << "AlleleList.size()=" << AlleleList.size() << "\n";
+		for (j=0;j<CoreSize;++j)
+		{
+			cout << "AlleleList[" << j << "][" << i << "].size()=" << AlleleList[j][i].size() << "\n";
+			for (unsigned int k=0;k<AlleleList[j][i].size();++k) cout << "AlleleList[j][i][]=" << AlleleList[j][i][k] << "\n";
+			cout << inss.str() << "\n";
+		}
+	*/
+
 
 	//send stringstream table to rtk codes for rarification	
 	//rtkrare returns the median rarefied allele count, for the current locus, derived from all pops in core
@@ -74,8 +96,6 @@ int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> A
 		}
 		else if (Rarify == "yes")
 		{
-//			stringstream inss;
-//			int d;
 			//create a stringstream table with allele frequencies from AlleleList for input into rtk codes
 			for (i=0;i<NumLoci;i++)
 			{
@@ -91,7 +111,8 @@ int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> A
 				}
 			
 				//perform the rarification, add the rarified allele count at this locus (i)
-				Mlist[i] = MyDoRarify(i, AlleleList, AlleleSet, CoreSize);
+				if (AlleleSet.size() == 0) Mlist[i] = 0;
+				else Mlist[i] = MyDoRarify(i, AlleleList, AlleleSet, CoreSize);
 				
 			} //NumLoci
 		}
