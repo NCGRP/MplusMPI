@@ -8,6 +8,7 @@
 #include <mpi.h>
 #include <numeric>
 #include <omp.h>
+#include <random>
 #include <set>
 #include <string>
 #include <string.h>

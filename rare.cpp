@@ -844,10 +844,24 @@ int rtkrare(stringstream& in)
 
 
 
+	//non-threaded way to run the computations
+	size_t smpls = Mo->smplNum();
+
+	for (uint i=0;i<smpls;++i)
+	{
+		DivEsts * div = new DivEsts();
+		rareStruct* tmpRS = calcDivRar(i, Mo, div, opts, &abundInRow, &occuencesInRow);
+		divvs[tmpRS->i] = tmpRS->div;
+		delete tmpRS;
+	}
 
 
 
 
+
+    
+/*    
+    //multi-threaded way to run the computations 
     //object to keep matrices
     //vector < vector < vector < string >> > tmpMatFiles(opts->depth.size(), vector<vector <string>>(opts->write));
     //cerr << "TH";
@@ -876,16 +890,6 @@ int rtkrare(stringstream& in)
                 divvs[tmpRS->i]     = tmpRS->div;
                 string curS         = Mo->getSampleName(tmpRS->i);
 
-                // add the matrices to the container
-/*                if (opts->write > 0) {
-                    if (opts->writeSwap) {
-                       binaryStoreSample(opts, tmpMatFiles, tmpRS, rowNames, outF, cntsNames, false);
-                    }
-                    else {
-                        memoryStoreSample(opts, tmpRS, MaRare, cntsNames, false);
-                    }
-                }
-*/
                 delete tmpRS;
                 // free slot
                 slots[j].inUse = false;
@@ -901,27 +905,9 @@ int rtkrare(stringstream& in)
                 DivEsts * div   = new DivEsts();
                 slots[j].fut    = async(std::launch::async, calcDivRar, i, Mo, div, opts, &abundInRow, &occuencesInRow);
 
-/*                // send user some feedback
-                int thirds = 1;
-                if(smpls > 5){
-                    thirds = (int) ceil((smpls-3)/3);
-                }
-                if(i < 3 || i % thirds == 0  ){
-                    cout << "At Sample " << i+1 << " of " << smpls << " Samples" << std::endl  ;
-                    if(i > 3 && i % thirds == 0 ){
-                        cout << "..." << std::endl ;
-                    }
-                }else if( i == 3){
-                    cout << "..." << std::endl ;
-                }
-*/
                 i++;
-
             }
-
         }
-
-
     }
 
     // wait for the threads to finish up.
@@ -937,21 +923,13 @@ int rtkrare(stringstream& in)
         divvs[tmpRS->i]     = tmpRS->div;
         string curS         = Mo->getSampleName(tmpRS->i);
 
-/*        // add the matrices to the container
-        if (opts->write > 0) {
-            if (opts->writeSwap) {
-               binaryStoreSample(opts, tmpMatFiles, tmpRS, rowNames, outF, cntsNames, false);
-            }
-            else {
-                memoryStoreSample(opts, tmpRS, MaRare, cntsNames, false);
-            }
-        }
-*/
                 
         delete tmpRS;
         // free slot
         slots[j].inUse = false;
     }
+*/
+
 
 	/*
 		// print out some stats on the vector holding diversity values, divvs

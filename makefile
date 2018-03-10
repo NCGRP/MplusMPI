@@ -15,7 +15,7 @@ OMP = -fopenmp
 #CXX = mpicxx
 #OMP = -openmp
 
-FLAGS = --std=gnu++11 -O3 -Wall
+FLAGS = -std=gnu++11 -O3 -Wall
 
 all: m+.o mp.o aStar.o rare.o
 	${CXX} ${FLAGS} -o m+ m+.o mp.o aStar.o rare.o ${OMP}

@@ -615,7 +615,7 @@ int MyProcessDatFileIII(char* DatFileBuffer, int procid, vector<int> AllColumnID
 
 
 //returns maximum number of alleles possible at each locus for active and target
-vector<int> MyGetMaxs(vector<vector<vector<int> > > ActiveAlleleByPopList, std::string Rarify, int procid)
+vector<int> MyGetMaxs(vector<vector<vector<int> > > ActiveAlleleByPopList, std::string Rarify, int procid, unsigned int& sss)
 {
 	unsigned int i, j, k;
 	vector<int> ActiveMaxAllelesList;
@@ -642,7 +642,6 @@ vector<int> MyGetMaxs(vector<vector<vector<int> > > ActiveAlleleByPopList, std::
 	}
 	else if (Rarify == "yes")
 	{
-		unsigned int s; //s is the smallest sample size
 		std::pair<std::set<int>::iterator,bool> ret;
 		unsigned int ns; //ns is a counter that limits the number of novel alleles added to NewSet by a single population
 		                 //to the maximum number that could be added by the smallest population.  this is rarification, essentially.
@@ -651,15 +650,15 @@ vector<int> MyGetMaxs(vector<vector<vector<int> > > ActiveAlleleByPopList, std::
 		{
 			//find the smallest sample (~= smallest pop size) for current locus, must look at all loci due to missing data
 			//exclude samples where the number of sampled alleles = 0 (due to missing data)
-			s = std::numeric_limits<int>::max(); //set initial s to largest integer possible
+			sss = std::numeric_limits<int>::max(); //set initial sss to largest integer possible
 			for (j=0;j<ActiveAlleleByPopList.size();j++)
 			{
 				//test whether current sample size is lowest so far
 				if (ActiveAlleleByPopList[j][0].size() == 0) continue;
-				else if (ActiveAlleleByPopList[j][0].size() <= s) s = ActiveAlleleByPopList[j][0].size();
+				else if (ActiveAlleleByPopList[j][0].size() <= sss) sss = ActiveAlleleByPopList[j][0].size();
 			}
 			
-			//collect sets of alleles at locus i, for all pops
+			//collect alleles at locus i, for all pops
 			vector<vector<int> >().swap(CurrPop); //clear CurrPop
 			for (j=0;j<ActiveAlleleByPopList.size();j++)
 			{
@@ -688,7 +687,7 @@ vector<int> MyGetMaxs(vector<vector<vector<int> > > ActiveAlleleByPopList, std::
 			*/
 			
 			//determine unique alleles across populations using a set
-			//allow no more than s new alleles to be added to the set, per population
+			//allow no more than sss new alleles to be added to the set, per population
 			//examine populations in order from smallest to largest
 			NewSet.clear();
 			for (j=0;j<CurrPop.size();j++)
@@ -698,8 +697,8 @@ vector<int> MyGetMaxs(vector<vector<vector<int> > > ActiveAlleleByPopList, std::
 				ns = 0;
 				for (k=0;k<CurrLoc.size();++k)
 				{
-					//allow no more than s new alleles to be added to the set, per population
-					if (ns < s)
+					//allow no more than sss new alleles to be added to the set, per population
+					if (ns < sss)
 					{
 						ret = NewSet.insert(CurrLoc[k]); //place alleles into set to eliminate redundancies, returns pair<it,bool=true> if a new item is accepted
 						if (ret.second == true) 
@@ -713,34 +712,8 @@ vector<int> MyGetMaxs(vector<vector<vector<int> > > ActiveAlleleByPopList, std::
 			}
 			
 			ActiveMaxAllelesList.push_back(NewSet.size()); //the set size after adding all populations for locus i is the maximum number of alleles
-
 		}	
-		
-		
-		
-		
-
-/*		int M;
-		int CoreSize = ActiveAlleleByPopList.size();
-		//determine unique alleles for current core using a set
-		for (i=0;i<ActiveAlleleByPopList[0].size();++i)
-		{
-			NewSet.clear();
-			for (j=0;j<ActiveAlleleByPopList.size();j++)
-			{
-				CurrLoc = ActiveAlleleByPopList[j][i]; //you are traversing the locus 'column' of the 3d grid
-													   //get locus i for population j
-				for (k=0;k<CurrLoc.size();++k)
-				{
-					NewSet.insert(CurrLoc[k]);	//place alleles into set to eliminate redundancies
-				}
-			}
-			M = MyDoRarify(i, ActiveAlleleByPopList, NewSet, CoreSize);
-			ActiveMaxAllelesList.push_back(M); //the set size is the sum of the rarified allele counts returned by MyDoRarify
-		}
-*/
 	}
-	
 	return ActiveMaxAllelesList;
 }
 
@@ -1474,9 +1447,10 @@ int main( int argc, char* argv[] )
 		
 
 	//get maximum number of alleles possible at each locus for active and target
+	unsigned int sss; //sss is the smallest sample size, only relevant to Rarify=yes, updated as reference
 	vector<int> ActiveMaxAllelesList, TargetMaxAllelesList;
-	ActiveMaxAllelesList = MyGetMaxs(ActiveAlleleByPopList, Rarify, procid);
-	TargetMaxAllelesList = MyGetMaxs(TargetAlleleByPopList, Rarify, procid);
+	ActiveMaxAllelesList = MyGetMaxs(ActiveAlleleByPopList, Rarify, procid, sss);
+	TargetMaxAllelesList = MyGetMaxs(TargetAlleleByPopList, Rarify, procid, sss);
 
 	/*
 		//print the *MaxAllelesList
