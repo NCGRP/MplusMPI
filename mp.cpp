@@ -1,5 +1,5 @@
 #include "m+.hpp"
-	
+/*	
 int MyDoRarify(int i, vector<vector<vector<int> > > AlleleList, std::set<int> AlleleSet, int CoreSize)
 {
 	std::stringstream inss;
@@ -34,7 +34,7 @@ int MyDoRarify(int i, vector<vector<vector<int> > > AlleleList, std::set<int> Al
 	}
 	
 
-	/*
+	
 		for (set<int>::iterator it=AlleleSet.begin(); it!=AlleleSet.end(); ++it) cout << "AlleleSet[]=" << (*it) << "\n";
 		cout << "AlleleList.size()=" << AlleleList.size() << "\n";
 		for (j=0;j<CoreSize;++j)
@@ -43,7 +43,7 @@ int MyDoRarify(int i, vector<vector<vector<int> > > AlleleList, std::set<int> Al
 			for (unsigned int k=0;k<AlleleList[j][i].size();++k) cout << "AlleleList[j][i][]=" << AlleleList[j][i][k] << "\n";
 			cout << inss.str() << "\n";
 		}
-	*/
+	
 
 
 	//send stringstream table to rtk codes for rarification	
@@ -51,8 +51,9 @@ int MyDoRarify(int i, vector<vector<vector<int> > > AlleleList, std::set<int> Al
 	M = rtkrare(inss);
 	return M;
 }
+*/
 
-int MyRarify(int i, vector<vector<vector<int> > > AlleleList, int sss)
+int MyRarify(int i, vector<vector<vector<int> > > AlleleList, vector<unsigned int> sss, std::mt19937_64& rng)
 {
 	/*AlleleList structure = ActiveAlleleByPopList structure:
 	  Pop1..r
@@ -66,27 +67,27 @@ int MyRarify(int i, vector<vector<vector<int> > > AlleleList, int sss)
 	vector<vector<int> > CurrPop;  //contains vector of allelic states, for each population, for locus i only
 	set<int> NewSet;
 	
+	/*
 	//collect alleles at locus i, for all pops
-	vector<vector<int> >().swap(CurrPop); //clear CurrPop
 	for (j=0;j<AlleleList.size();j++)
 	{
 		CurrPop.push_back(AlleleList[j][i]); //extract alleles for all populations for this locus
 	}
+	*/
 	
 	//sort CurrPop by population/sample size, so that alleles can be counted from smallest pop to largest
-	std::sort(CurrPop.begin(), CurrPop.end(), [](const vector<int> & a, const vector<int> & b){ return a.size() < b.size(); });
+	//std::sort(CurrPop.begin(), CurrPop.end(), [](const vector<int> & a, const vector<int> & b){ return a.size() < b.size(); });
 	
 	//determine unique alleles across populations using a set
-	//add a sample of sss alleles from each population to the set
-	//examine populations in order from smallest to largest
-	for (j=0;j<CurrPop.size();j++)
+	//add a sample of sss[i] alleles from each population to the set
+	//for (j=0;j<CurrPop.size();j++)
+	for (j=0;j<AlleleList.size();j++)
 	{
-		CurrLoc = CurrPop[j]; //all alleles for pop j, in order of increasing population size
-		std::shuffle(std::begin(CurrLoc), std::end(CurrLoc), rng); //shuffle the order of the alleles so that a random sample of sss alleles can be taken for rarification
+		std::shuffle(AlleleList[j][i].begin(), AlleleList[j][i].end(), rng); //shuffle the order of the alleles so that a random sample of sss alleles can be taken for rarification
 
-		for (k=0;k<sss;++k)
+		for (k=0;k<sss[i];++k)
 		{
-			NewSet.insert(CurrLoc[k]); //place alleles into set to eliminate redundancies, returns pair<it,bool=true> if a new item is accepted
+			NewSet.insert(AlleleList[j][i][k]); //place alleles into set to eliminate redundancies, sample no more than sss[i] alleles per population
 		}
 	}
 	
@@ -97,7 +98,7 @@ int MyRarify(int i, vector<vector<vector<int> > > AlleleList, int sss)
 
 }
 
-int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> ActiveMaxAllelesList, std::string Standardize, std::string Rarify, double& RandomActiveDiversity, double& AltRandomActiveDiversity)
+int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> ActiveMaxAllelesList, std::string Standardize, std::string Rarify, vector<unsigned int> sss, std::mt19937_64& rng, double& RandomActiveDiversity, double& AltRandomActiveDiversity)
 {
 	/*AlleleList structure:
 		  Pop1..r
@@ -148,7 +149,7 @@ int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> A
 				//sample no more than sss alleles from each accession in core, remove redundancies using set
 				//add unique alleles to set in increasing order of population size
 
-				M = MyRarify(i, AlleleList, sss);
+				M = MyRarify(i, AlleleList, sss, rng);
 				Mlist[i] = M;
 				/*** de novo coded rarification end ***/
 
@@ -174,14 +175,8 @@ int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> A
 
 			} //NumLoci
 		}
-		/*
-				//print out the Mlist
-				for (unsigned int i=0;i<Mlist.size();++i)
-				{
-					cout << "Mlist[" << i << "]=" << Mlist[i] << " ";
-				}
-				cout << "\n";
-		*/
+		
+		
 
 
 
@@ -207,6 +202,26 @@ int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> A
 			M = M + Mlist[k];
 		}
 		
+
+
+
+		/*
+				//print out the Mlist
+				for (unsigned int i=0;i<Mlist.size();++i)
+				{
+					if (Mlist[i] > ActiveMaxAllelesList[i])
+					{
+						cout << "Mlist[i] > ActiveMaxAllelesList[i]\n";
+						cout << "Mlist[" << i << "]=" << Mlist[i] << " MaxList[" << i << "]=" << ActiveMaxAllelesList[i] << " sss[" << i << "]=" << sss[i] << "\n";
+						cin.get();
+					}
+				}
+		*/
+
+
+
+
+
 		//6. Determine the way variables are updated so that the value for the desired optimality 
 		//criterion is RandomActiveDiversity, while the other is AltRandomActiveDiversity.  
 		//This way, the output can contain information on both M+ and M criteria, 
@@ -268,6 +283,8 @@ void mp(
 	int NumReplicates,
 	char* OutFilePath,
 	std::string Rarify,
+	vector<unsigned int> sss,
+	std::mt19937_64& rng,
 	std::string Kernel,
 	vector<int> KernelAccessionIndex,
 	vector<int> AccessionNameList,
@@ -405,7 +422,6 @@ void mp(
 	else if ( procid != 0 )
 	{
 		unsigned int r; //r = core size, 
-		//int nr, RandAcc, b, bsc, plateau; //nr = controller to repeat NumReplicates times
 		int RandAcc, b, bsc, plateau; //nr = controller to repeat NumReplicates times
 								//row = result vector row number, bsc = holds best sub core member, and other indexed accessions
 									//plateau = index of the number of reps in optimization loop with same diversity value
@@ -437,18 +453,7 @@ void mp(
 		vector<int> pbcore;
 		vector<std::string> TempListStr;
 	
-		/*
-		//seed the random number generator for each processor
-		int tt;
-		tt = (time(NULL));
-		srand ( abs(((tt*181)*((procid-83)*359))%104729) );
-		*/
 		
-		//seed the random number generator for each processor C++11
-		unsigned long long seed = (unsigned long long)chrono::high_resolution_clock::now().time_since_epoch().count();
-		//std::random_device rd;     // only used once to initialise (seed) engine
-		std::mt19937_64 rng(seed*procid);    // random-number engine used (Mersenne-Twister x64 in this case), seeded with time*procid
-
 		//do parallelization so that each rep by core size combo can be
 		//handled by a distinct thread.  this involves figuring out the total
 		//number of reps*coresizes taking into account the SamplingFreq
@@ -474,6 +479,7 @@ void mp(
 		//iterate thru the relevant rows
 		for (int rnr=start;rnr<stop;++rnr)
 		{
+			
 			r = MinCoreSize + ((rnr / NumReplicates) * SamplingFreq); //int rounds to floor
 			
 			//develop random starting core set
@@ -510,7 +516,7 @@ void mp(
 			{
 				//choose an accession randomly from those available
 				//RandAcc = rand() % TempList.size();
-				std::uniform_int_distribution<int> uni(0,TempList.size()); // define random number generator interval to select items from TempList
+				std::uniform_int_distribution<int> uni(0,TempList.size()-1); // define random number generator interval to select items from TempList
 				RandAcc = uni(rng); //rng is mt19937_64
 				//add it to the list
 				AccessionsInCore[i] = TempList[RandAcc];
@@ -533,7 +539,7 @@ void mp(
 			AlleleList.clear();
 			AlleleList = CoreAlleles;
 	
-			MyCalculateDiversity(AlleleList, ActiveMaxAllelesList, Standardize, Rarify, RandomActiveDiversity, AltRandomActiveDiversity);
+			MyCalculateDiversity(AlleleList, ActiveMaxAllelesList, Standardize, Rarify, sss, rng, RandomActiveDiversity, AltRandomActiveDiversity);
 			//in MyCalculateDiversity, latter two variables are updated as references
 			//save them away in non-updated variables
 			StartingRandomActiveDiversity = RandomActiveDiversity;
@@ -547,7 +553,7 @@ void mp(
 				b = AccessionsInCore[j];
 				AlleleList[j] = TargetAlleleByPopList[b];
 			}
-			MyCalculateDiversity(AlleleList, TargetMaxAllelesList, Standardize, Rarify, RandomTargetDiversity, AltRandomTargetDiversity);
+			MyCalculateDiversity(AlleleList, TargetMaxAllelesList, Standardize, Rarify, sss, rng, RandomTargetDiversity, AltRandomTargetDiversity);
 
 
 			//BEGIN OPTIMIZATION
@@ -571,7 +577,7 @@ void mp(
 				
 				AlleleList = CoreAlleles;
 				
-				MyCalculateDiversity(AlleleList, ActiveMaxAllelesList, Standardize, Rarify, RandomActiveDiversity, AltRandomActiveDiversity);
+				MyCalculateDiversity(AlleleList, ActiveMaxAllelesList, Standardize, Rarify, sss, rng, RandomActiveDiversity, AltRandomActiveDiversity);
 				best = RandomActiveDiversity; //best is equivalent to OptimizedActiveDiversity
 				AltOptimizedActiveDiversity = AltRandomActiveDiversity;
 			}
@@ -601,7 +607,7 @@ void mp(
 						AlleleList.clear();
 						TdTempList.clear();
 				
-						TdTempList = CoreAlleles; //swap to temporary vector
+						TdTempList = CoreAlleles; //copy to temporary vector
 						TdTempList.erase( TdTempList.begin() + i);
 						AlleleList = TdTempList;
 			
@@ -621,7 +627,7 @@ void mp(
 						--5.5. simultaneous to the calculation, keep track of which subcore is best
 						*/
 			
-						MyCalculateDiversity(AlleleList, ActiveMaxAllelesList, Standardize, Rarify, RandomActiveDiversity, AltRandomActiveDiversity);
+						MyCalculateDiversity(AlleleList, ActiveMaxAllelesList, Standardize, Rarify, sss, rng, RandomActiveDiversity, AltRandomActiveDiversity);
 						nnew = RandomActiveDiversity;
 
 						if (nnew >= best) // >= allows sideways movement during hill climbing
@@ -655,7 +661,7 @@ void mp(
 			
 					//shuffle the list of remaining accessions, so addition order is not predictable
 					//std::random_shuffle (TempList.begin(), TempList.end());
-					std::shuffle (std::begin(TempList), std::end(TempList), rng);
+					std::shuffle (TempList.begin(), TempList.end(), rng);
 					
 					//add each remaining accession consecutively, calculate diversity, test 
 					//whether it is better than the prior one
@@ -667,7 +673,6 @@ void mp(
 						//define the core
 						TempList2 = BestSubCore;
 						TempList2.resize( TempList2.size() + 1 );
-						//TempList2.push_back(i);
 						TempList2[TempList2.size()-1] = bsc; //add new accession to last vector element
 						AccessionsInCore = TempList2;
 			
@@ -678,20 +683,20 @@ void mp(
 						AlleleList = TdTempList;
 			
 						//calculate diversity
-						MyCalculateDiversity(AlleleList, ActiveMaxAllelesList, Standardize, Rarify, nnew, TempAltOptimizedActiveDiversity); 
+						MyCalculateDiversity(AlleleList, ActiveMaxAllelesList, Standardize, Rarify, sss, rng, nnew, TempAltOptimizedActiveDiversity); 
 		
 						
 						
 
 
-						
-						for (unsigned int  z=0;z<AccessionsInCore.size();++z) cout << AccessionsInCore[z] << ",";
-						cout << "  ";
-						for (unsigned int  z=0;z<bestcore.size();++z) cout << bestcore[z] << ",";					
-						cout << "  " << nnew << "  " << best << "  " << StartingDiversity << "  ";
-						for (unsigned int  z=0;z<pbcore.size();++z) cout << pbcore[z] << ",";
-						cout << "\n";					
-
+						/* print progress of search
+							for (unsigned int  z=0;z<AccessionsInCore.size();++z) cout << AccessionsInCore[z] << ",";
+							cout << "  ";
+							for (unsigned int  z=0;z<bestcore.size();++z) cout << bestcore[z] << ",";					
+							cout << "  " << nnew << "  " << best << "  " << StartingDiversity << "  ";
+							for (unsigned int  z=0;z<pbcore.size();++z) cout << pbcore[z] << ",";
+							cout << "\n";					
+						*/
 
 
 						
@@ -699,6 +704,7 @@ void mp(
 						
 						
 						//test whether current diversity is higher than the best diversity found so far
+						//if (nnew > best) // > no sideways movement during hill climbing
 						if (nnew >= best) // >= allows sideways movement during hill climbing
 						{
 							best = nnew;
@@ -708,15 +714,23 @@ void mp(
 						}
 					}
 
+
+					/* print progress of search
+						cout << "best=" << best << " StartingDiversity=" << StartingDiversity << " r=" << r << " ";
+						for (unsigned int z=0;z<pbcore.size();++z) cout << pbcore[z] << ",";
+						cout << " ";
+						for (unsigned int z=0;z<bestcore.size();++z) cout << bestcore[z] << ",";
+						cout << "\n";
+
+					*/
+
 					AccessionsInCore = bestcore; //define starting variable for next MSTRAT iteration
 		
 					
 					
 					
-					cout << "best=" << best << " StartingDiversity=" << StartingDiversity << "\n";
 					
-					
-					//when Rarify="yes", best may not equal StartingDiversity for the same core set
+					//when Rarify="yes", best might not equal StartingDiversity for the same core set
 					//because diversity measure involves rarified sampling of populations.
 					//In this case, allow loop to break when the same set of pops found in the
 					//prior iteration is found again
@@ -727,24 +741,33 @@ void mp(
 						vector<int> v2 = pbcore;
 						std::sort(v2.begin(), v2.end());
 						if ( v1 == v2 )
-						{
+						{							
 							plateau++;
 							if (plateau > 0) break;
 						}
+						else if (best > StartingDiversity) 
+						{
+							//update starting values and repeat
+							StartingDiversity = best;
+							pbcore = bestcore;
+						}
+						
 					}
-					
-					//if there has been no improvement from the prior iteration, you have reached
-					// the plateau and should exit the repeat
-					if (best == StartingDiversity) 
-					{
-						plateau++;
-						if (plateau > 0) break;
-					}
-					else if (best > StartingDiversity) 
-					{
-						//update starting values and repeat
-						StartingDiversity = best;
-						pbcore = bestcore;
+					else if (Rarify == "no")
+					{	
+						if (best == StartingDiversity) 
+						{
+							//if there has been no improvement from the prior iteration, you have reached
+							// the plateau and should exit the repeat
+							plateau++;
+							if (plateau > 0) break;
+						}
+						else if (best > StartingDiversity) 
+						{
+							//update starting values and repeat
+							StartingDiversity = best;
+							//pbcore = bestcore;
+						}
 					}
 
 				} //while(true) endless loop
@@ -761,7 +784,7 @@ void mp(
 			}
 	
 			//calculate diversity at target loci based upon the optimized core selection
-			MyCalculateDiversity(AlleleList, TargetMaxAllelesList, Standardize, Rarify, OptimizedTargetDiversity, AltOptimizedTargetDiversity);
+			MyCalculateDiversity(AlleleList, TargetMaxAllelesList, Standardize, Rarify, sss, rng, OptimizedTargetDiversity, AltOptimizedTargetDiversity);
 
 			//8. Assemble stats for optimized core and add to output vectors
 			//create a list of accession names from the list of accession ID's in AccessionsInCore

@@ -615,18 +615,44 @@ int MyProcessDatFileIII(char* DatFileBuffer, int procid, vector<int> AllColumnID
 
 
 //returns maximum number of alleles possible at each locus for active and target
-vector<int> MyGetMaxs(vector<vector<vector<int> > > ActiveAlleleByPopList, std::string Rarify, int procid, unsigned int& sss)
+vector<int> MyGetMaxs(vector<vector<vector<int> > > ActiveAlleleByPopList, std::string Rarify, int procid, vector<unsigned int>& sss, std::mt19937_64& rng)
 {
-	unsigned int i, j, k;
+	unsigned int i, j, k; 
+	unsigned int s;  //s is the smallest non-zero sample size per locus
 	vector<int> ActiveMaxAllelesList;
 	vector<int> CurrLoc;
 	set<int> NewSet;
+
+
+/*START HERE--maybe you don't need to put thru a set for Rarify=no.
+--make Rarify=yes like existing Rarify=no due to earlier rarification*/
+
 
 	if (Rarify == "no")
 	{
 		//determine unique alleles at each locus using a set
 		for (i=0;i<ActiveAlleleByPopList[0].size();++i)
 		{
+			
+
+		/*
+			//temporary section to calculate sss
+			//find the smallest non-zero sample (~= smallest pop size) for current locus, must look at all loci due to missing data
+			//exclude samples where the number of sampled alleles = 0 (due to missing data)
+			s = std::numeric_limits<int>::max(); //set initial s to largest integer possible
+			for (j=0;j<ActiveAlleleByPopList.size();j++)
+			{
+				//test whether current sample size is lowest so far
+				if (ActiveAlleleByPopList[j][0].size() == 0) continue;
+				else if (ActiveAlleleByPopList[j][0].size() <= s) s = ActiveAlleleByPopList[j][0].size();
+			}
+			sss.push_back(s);  //add the smallest non-zero sample size for this locus to the list of such things.
+		*/
+			
+			
+			
+			
+			
 			NewSet.clear();
 			for (j=0;j<ActiveAlleleByPopList.size();j++)
 			{
@@ -648,15 +674,18 @@ vector<int> MyGetMaxs(vector<vector<vector<int> > > ActiveAlleleByPopList, std::
 		vector<vector<int> > CurrPop;
 		for (i=0;i<ActiveAlleleByPopList[0].size();++i)
 		{
-			//find the smallest sample (~= smallest pop size) for current locus, must look at all loci due to missing data
+			//find the smallest non-zero sample (~= smallest pop size) for current locus, must look at all loci due to missing data
 			//exclude samples where the number of sampled alleles = 0 (due to missing data)
-			sss = std::numeric_limits<int>::max(); //set initial sss to largest integer possible
+			s = std::numeric_limits<int>::max(); //set initial s to largest integer possible
 			for (j=0;j<ActiveAlleleByPopList.size();j++)
 			{
 				//test whether current sample size is lowest so far
-				if (ActiveAlleleByPopList[j][0].size() == 0) continue;
-				else if (ActiveAlleleByPopList[j][0].size() <= sss) sss = ActiveAlleleByPopList[j][0].size();
+				//if (ActiveAlleleByPopList[j][0].size() <= s) s = ActiveAlleleByPopList[j][0].size();  //allows s=0 for loci where all data is missing for a pop
+				//does not allow s=0
+				if (ActiveAlleleByPopList[j][i].size() == 0) continue;
+				else if (ActiveAlleleByPopList[j][i].size() <= s) s = ActiveAlleleByPopList[j][i].size();
 			}
+			sss.push_back(s);  //add the smallest non-zero sample size for this locus to the list of such things.
 			
 			//collect alleles at locus i, for all pops
 			vector<vector<int> >().swap(CurrPop); //clear CurrPop
@@ -674,8 +703,8 @@ vector<int> MyGetMaxs(vector<vector<vector<int> > > ActiveAlleleByPopList, std::
 				}
 			*/
 
-			//sort CurrPop by population/sample size, so that alleles can be counted from smallest pop to largest
-			std::sort(CurrPop.begin(), CurrPop.end(), [](const vector<int> & a, const vector<int> & b){ return a.size() < b.size(); });
+			//sort CurrPop by population/sample size, so that alleles can be counted from smallest pop to largest<-doesn't matter
+			//std::sort(CurrPop.begin(), CurrPop.end(), [](const vector<int> & a, const vector<int> & b){ return a.size() < b.size(); });
 				
 			/*
 				if (procid == 0)
@@ -687,20 +716,20 @@ vector<int> MyGetMaxs(vector<vector<vector<int> > > ActiveAlleleByPopList, std::
 			*/
 			
 			//determine unique alleles across populations using a set
-			//allow no more than sss new alleles to be added to the set, per population
-			//examine populations in order from smallest to largest
+			//allow no more than s new alleles to be added to the set, per population
 			NewSet.clear();
 			for (j=0;j<CurrPop.size();j++)
 			{
-				CurrLoc = CurrPop[j]; //all alleles for pop j, in order of increasing population size
+				//CurrLoc = CurrPop[j]; //all alleles for pop j, in order of increasing population size
+				std::shuffle(CurrPop[j].begin(), CurrPop[j].end(), rng); //shuffle the order of the alleles so that a random sample of <=s new alleles can be taken
 									  
 				ns = 0;
-				for (k=0;k<CurrLoc.size();++k)
+				for (k=0;k<CurrPop[j].size();++k)
 				{
-					//allow no more than sss new alleles to be added to the set, per population
-					if (ns < sss)
+					//allow no more than s new alleles to be added to the set, per population
+					if (ns < s)
 					{
-						ret = NewSet.insert(CurrLoc[k]); //place alleles into set to eliminate redundancies, returns pair<it,bool=true> if a new item is accepted
+						ret = NewSet.insert(CurrPop[j][k]); //place alleles into set to eliminate redundancies, returns pair<it,bool=true> if a new item is accepted
 						if (ret.second == true) 
 						{
 							++ns; //if a new allele is inserted, index up ns
@@ -712,9 +741,24 @@ vector<int> MyGetMaxs(vector<vector<vector<int> > > ActiveAlleleByPopList, std::
 			}
 			
 			ActiveMaxAllelesList.push_back(NewSet.size()); //the set size after adding all populations for locus i is the maximum number of alleles
-		}	
+		}//repeat on loci	
 	}
 	return ActiveMaxAllelesList;
+}
+
+vector<int> MyRarifyData(vector<int> bb, unsigned int s, std::mt19937_64& rng)
+{
+	//bb is the incoming vector<int> of alleles
+	//s is the non-zero minimum sample size at the locus, for rarification
+	vector<int> aa; //rarified vector<int> of alleles
+	
+	std::shuffle(bb.begin(), bb.end(), rng); //shuffle the order of the alleles so that a random sample of sss alleles can be taken for rarification
+
+	for (unsigned int k=0;k<s;++k)
+	{
+		aa.push_back(bb[k]); //place alleles into set to eliminate redundancies, sample no more than sss[i] alleles per population
+	}
+	return aa;
 }
 
 bool fileExists(const char *fileName)
@@ -1068,6 +1112,7 @@ int main( int argc, char* argv[] )
 	}
 			
 	MPI_Bcast(&f, 1, MPI_UNSIGNED_LONG_LONG, 0, MPI_COMM_WORLD); //broadcast file size to all procs
+	MPI_Barrier(MPI_COMM_WORLD);
 	char * VarFileBuffer = (char*)malloc(f); //initialize and size the data structure to hold contents of var file
 
 	if (procid == 0)
@@ -1078,6 +1123,7 @@ int main( int argc, char* argv[] )
 	}
 	
 	MPI_Bcast(&VarFileBuffer[0], f, MPI_CHAR, 0, MPI_COMM_WORLD); //broadcast the var file contents to all procs
+	MPI_Barrier(MPI_COMM_WORLD);
 
 		
 	//.var file
@@ -1142,6 +1188,7 @@ int main( int argc, char* argv[] )
 	}
 			
 	MPI_Bcast(&f, 1, MPI_UNSIGNED_LONG_LONG, 0, MPI_COMM_WORLD); //broadcast file size to all procs
+	MPI_Barrier(MPI_COMM_WORLD);
 	char * DatFileBuffer = (char*)malloc(f); //initialize and size the data structure to hold contents of dat file
 
 	if (procid == 0)
@@ -1152,6 +1199,7 @@ int main( int argc, char* argv[] )
 	}
 	
 	MPI_Bcast(&DatFileBuffer[0], f, MPI_CHAR, 0, MPI_COMM_WORLD); //broadcast the dat file contents to all procs
+	MPI_Barrier(MPI_COMM_WORLD);
  
 
 	//***MPI: ALL PROCESSORS PROCESS .DAT FILE***
@@ -1159,81 +1207,6 @@ int main( int argc, char* argv[] )
 	vector<std::string> IndivPerPop;
 	vector<int> AllAlleles;
 	
-
-
-
-
-
-
-
-
-
-
-
-////////////old work/////////////
-/*	//switch for new MyProcessDatFileIII
-	vector<vector<set<int> > > AllAlleleByPopListSet; //structure of this 3D vector is:
-	// { { {pop1,loc1 alleles},{pop1,loc2 alleles},...}, { {pop2,loc1 alleles},{pop2,loc2 alleles},...} } }
-	
-	//Process the dat file
-	MyProcessDatFileIII(DatFileBuffer, procid, AllColumnIDList, ColKeyToAllAlleleByPopList, AllAlleleByPopListSet, FullAccessionNameList, IndivPerPop, AllAlleles);
-
-	vector<vector<vector<int> > > AllAlleleByPopList( AllAlleleByPopListSet.size(), vector<vector<int> >(UniqLociNamesList.size()) ); //structure of this 3D vector is:
-	// { { {pop1,loc1 alleles},{pop1,loc2 alleles},...}, { {pop2,loc1 alleles},{pop2,loc2 alleles},...} } }
-	//sized to number of populations, number of loci.  last level left unsized
-	
-		//Print out lists of unique All alleles from AllAlleleByPopListSet
-		set<int> si;
-		for (i=0;i<AllAlleleByPopListSet.size() ;i++)
-		{
-			cout << "Population " << FullAccessionNameList[i] << "\n";
-			for (j=0;j<AllAlleleByPopListSet[i].size();j++)
-			{
-				cout << "  Locus " << j << "\n    ";
-				si = AllAlleleByPopListSet[i][j];
-				for (std::set<int>::iterator it=si.begin(); it!=si.end(); ++it)
-					cout << *it << ",";
-				cout << "\n";
-			}
-		}
-
-	time_t startd,endd;
-	if (procid == 0) 
-	{
-		cout << "  Converting data structures...\n";
-		time (&startd);
-	}
-
-	//convert set to vector for further processing
-	for (i=0;i<AllAlleleByPopList.size();++i)
-	{
-		for (j=0;j<AllAlleleByPopList[i].size();++j)
-		{
-			vector<int> ttvec(AllAlleleByPopListSet[i][j].begin(), AllAlleleByPopListSet[i][j].end()); //use constructor to convert set to vector	
-			AllAlleleByPopList[i][j] = ttvec;
-		}
-	}
-	vector<vector<set<int> > >().swap(AllAlleleByPopListSet); //clear variable, no longer needed
-
-	double dif = difftime (endd,startd);
-	if (procid == 0) 
-	{
-		time (&endd);
-		dif = difftime (endd,startd);
-		if (dif==1) cout << "    " << dif << " second.\n";	
-		else cout << "    " << dif << " seconds.\n";	
-
-		cout << "  Separating reference and target loci...\n";
-		time (&startd);
-	}
-*/
-
-
-
-////////////new work/////////////
-
-
-
 	vector<vector<vector<int> > > AllAlleleByPopList; //structure of this 3D vector is:
 	//vector<vector<vector<int> > > AllAlleleByPopList( AllAlleleByPopListSet.size(), vector<vector<int> >(UniqLociNamesList.size()) ); //structure of this 3D vector is:
 	// { { {pop1,loc1 alleles},{pop1,loc2 alleles},...}, { {pop2,loc1 alleles},{pop2,loc2 alleles},...} } }
@@ -1256,23 +1229,25 @@ int main( int argc, char* argv[] )
 	MyReduceToRef(AllAlleleByPopList, ReferenceOrTargetKey, ActiveAlleleByPopList, TargetAlleleByPopList); //latter 2 variables updated as reference
 	
 	/*
-		//Print out lists alleles from AllAlleleByPopList
-		vector<int> si;
-		for (i=0;i<AllAlleleByPopList.size() ;i++)
+		//Print out alleles from AllAlleleByPopList
+		if (procid == 0) 
 		{
-			cout << "Population " << FullAccessionNameList[i] << "\n";
-			for (j=0;j<AllAlleleByPopList[i].size();j++)
+			vector<int> si;
+			for (i=0;i<AllAlleleByPopList.size() ;i++)
 			{
-				cout << "  Locus " << j << "\n    ";
-				cout << "  AllAlleleByPopList[" << i << "][" << j << "].size()=" << AllAlleleByPopList[i][j].size() << "\n";
-				si = AllAlleleByPopList[i][j];
-				for (std::vector<int>::iterator it=si.begin(); it!=si.end(); ++it)
-					cout << *it << ",";
-				cout << "\n";
+				cout << "Population " << FullAccessionNameList[i] << "\n";
+				for (j=0;j<AllAlleleByPopList[i].size();j++)
+				{
+					cout << "  Locus " << j << "\n    ";
+					cout << "  AllAlleleByPopList[" << i << "][" << j << "].size()=" << AllAlleleByPopList[i][j].size() << "\n";
+					si = AllAlleleByPopList[i][j];
+					for (std::vector<int>::iterator it=si.begin(); it!=si.end(); ++it)
+						cout << *it << ",";
+					cout << "\n";
+				}
 			}
 		}
 	*/
-
 
 
 
@@ -1446,11 +1421,130 @@ int main( int argc, char* argv[] )
 	std::sort(KernelAccessionIndex.begin(), KernelAccessionIndex.end(), std::greater<int>());
 		
 
+	//seed the random number generator for each procid
+	unsigned long long seed = (unsigned long long)chrono::high_resolution_clock::now().time_since_epoch().count();
+	//std::random_device rd;     // only used once to initialise (seed) engine
+	std::mt19937_64 rng(seed*(procid+1));    // random-number engine used (Mersenne-Twister in this case), seeded with time*procid
+
 	//get maximum number of alleles possible at each locus for active and target
-	unsigned int sss; //sss is the smallest sample size, only relevant to Rarify=yes, updated as reference
+	vector<unsigned int> sss;  //sss is a vector holding the smallest non-zero sample size for each locus, only relevant to Rarify=yes, updated as reference
 	vector<int> ActiveMaxAllelesList, TargetMaxAllelesList;
-	ActiveMaxAllelesList = MyGetMaxs(ActiveAlleleByPopList, Rarify, procid, sss);
-	TargetMaxAllelesList = MyGetMaxs(TargetAlleleByPopList, Rarify, procid, sss);
+	ActiveMaxAllelesList = MyGetMaxs(ActiveAlleleByPopList, Rarify, procid, sss, rng);
+	TargetMaxAllelesList = MyGetMaxs(TargetAlleleByPopList, Rarify, procid, sss, rng);
+
+
+
+
+
+		//Print out alleles from ActiveAlleleByPopList
+		if (procid == 1) 
+		{
+			vector<int> si;
+			for (i=0;i<ActiveAlleleByPopList.size() ;i++)
+			{
+				cout << "PrePopulation " << FullAccessionNameList[i] << "\n";
+				for (j=0;j<ActiveAlleleByPopList[i].size();j++)
+				{
+					cout << "PreLocus " << j << ", ";
+					cout << "ActiveAlleleByPopList[" << i << "][" << j << "].size()=" << ActiveAlleleByPopList[i][j].size() << ", ";
+					si = ActiveAlleleByPopList[i][j];
+					for (std::vector<int>::iterator it=si.begin(); it!=si.end(); ++it)
+						cout << *it << ",";
+					cout << "\n";
+				}
+			}
+		}
+
+
+
+
+
+
+
+
+	//***MPI: MASTER 0 RARIFIES THE DATA, BROADCASTS TO ALL PROCS
+	//If Rarify="yes", reduce the Active(Target)AlleleByPopList to the smallest non-zero sample size for each locus
+	//This is the rarification step. It is performed by master node then pass to other ranks 
+	//using MPI_Bcast so that the same rarified data set is used by all ranks.
+	if (Rarify == "yes")
+	{
+		//create receive vector, of same size as Active(Target)AlleleByPopList
+		vector<vector<vector<int> > > recvec(ActiveAlleleByPopList.size()); //size only the first level
+		vector<int> aa; //will hold MPI_Bcast'ed rarified allele vector<int>
+		
+		//rarify each Pop x locus x allele vector independently, to make MPI_Bcast easier
+		for (unsigned int i=0;i<ActiveAlleleByPopList.size();++i)
+		{
+			for (unsigned int j=0;j<ActiveAlleleByPopList[0].size();++j)
+			{
+				f=0; //vector<int> size
+				if (procid == 0)
+				{
+					aa = MyRarifyData(ActiveAlleleByPopList[i][j], sss[j], rng);
+					f = (unsigned long long)aa.size();
+				}
+				
+				
+				//MPI_Bcast rarified allele vector<int> size, source rank=0
+				MPI_Bcast(&f, 1, MPI_UNSIGNED_LONG_LONG, 0, MPI_COMM_WORLD);
+				MPI_Barrier(MPI_COMM_WORLD);
+
+				//resize the receiving vector for all other procieds
+				if (procid != 0) aa.resize(f);
+
+				
+				//MPI_Bcast allele vector<int> content
+				MPI_Bcast(&aa[0], f, MPI_INT, 0, MPI_COMM_WORLD);
+				MPI_Barrier(MPI_COMM_WORLD);
+
+				//printf("i=%d j=%d rank=%02d f=%d aasize=%d\n", i, j, procid, f, aa.size());
+				
+				//add vector<int> onto recvec
+				recvec[i].push_back(aa);				
+				
+				vector<int>().swap(aa); //clear aa
+			}
+		}
+		//copy recvec to ActiveAlleleByPopList
+		ActiveAlleleByPopList = recvec;
+		vector<vector<vector<int> > >().swap(recvec); //clear recvec
+	
+		//recalculate Active(Target)MaxAllelesList for Rarify = "yes"
+		ActiveMaxAllelesList = MyGetMaxs(ActiveAlleleByPopList, Rarify, procid, sss, rng);
+		TargetMaxAllelesList = MyGetMaxs(TargetAlleleByPopList, Rarify, procid, sss, rng);
+	
+	}
+
+	/*
+		//Print out alleles from ActiveAlleleByPopList
+		if (procid == 1) 
+		{
+			vector<int> si;
+			for (i=0;i<ActiveAlleleByPopList.size() ;i++)
+			{
+				cout << "PostPopulation " << FullAccessionNameList[i] << "\n";
+				for (j=0;j<ActiveAlleleByPopList[i].size();j++)
+				{
+					cout << "PostLocus " << j << ", ";
+					cout << "ActiveAlleleByPopList[" << i << "][" << j << "].size()=" << ActiveAlleleByPopList[i][j].size() << ", ";
+					si = ActiveAlleleByPopList[i][j];
+					for (std::vector<int>::iterator it=si.begin(); it!=si.end(); ++it)
+						cout << *it << ",";
+					cout << "\n";
+				}
+			}
+			cout << "seed=" << seed << "\n";
+		}
+	*/
+
+
+
+
+
+
+
+
+
 
 	/*
 		//print the *MaxAllelesList
@@ -1547,6 +1641,8 @@ int main( int argc, char* argv[] )
 		NumReplicates,
 		OutFilePath,
 		Rarify,
+		sss,
+		rng,
 		Kernel,
 		KernelAccessionIndex,
 		AccessionNameList,

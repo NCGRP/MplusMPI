@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <chrono>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -133,7 +134,7 @@ void printCLOSEDList(SortedCostNodeList CLOSEDlist);
 void printAllNodes(std::vector<Node> AllNodes);
 
 /***************FUNCTIONS SHARED BETWEEN FILES*****************/
-int MyDoRarify(int i, vector<vector<vector<int> > > AlleleList, std::set<int> AlleleSet, int CoreSize);
+//int MyDoRarify(int i, vector<vector<vector<int> > > AlleleList, std::set<int> AlleleSet, int CoreSize);
 int aStar 
 	(
 		char* IdealFilePath, 
@@ -156,6 +157,8 @@ void mp
 		int NumReplicates,
 		char* OutFilePath,
 		std::string Rarify,
+		vector<unsigned int> sss,
+		std::mt19937_64& rng,
 		std::string Kernel,
 		vector<int> KernelAccessionIndex,
 		vector<int> AccessionNameList,
