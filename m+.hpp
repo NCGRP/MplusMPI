@@ -134,7 +134,6 @@ void printCLOSEDList(SortedCostNodeList CLOSEDlist);
 void printAllNodes(std::vector<Node> AllNodes);
 
 /***************FUNCTIONS SHARED BETWEEN FILES*****************/
-//int MyDoRarify(int i, vector<vector<vector<int> > > AlleleList, std::set<int> AlleleSet, int CoreSize);
 int aStar 
 	(
 		char* IdealFilePath, 
@@ -156,8 +155,6 @@ void mp
 		int SamplingFreq,
 		int NumReplicates,
 		char* OutFilePath,
-		std::string Rarify,
-		vector<unsigned int> sss,
 		std::mt19937_64& rng,
 		std::string Kernel,
 		vector<int> KernelAccessionIndex,
