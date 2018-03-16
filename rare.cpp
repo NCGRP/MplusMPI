@@ -8,7 +8,7 @@
 
 int medianDiv(vector<DivEsts*>& inD, bool printDIV, options* opts)
 {
-	int M; //rarified allele count
+	int M; //rarefied allele count
 
 	vector<uint> cnts;
 	vector<vector<uint> > rr(inD.size(),vector<uint>()); //holds the table reporting rarified allele count for each pop

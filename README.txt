@@ -30,14 +30,8 @@ Notes:  Missing data must be coded as 9999. Option -m uses MPI and -a uses OpenM
 
 Examples (mpirun):
           mpirun -np 2 ./m+ ./beet.var ./beet.dat -m 3 28 2 3 ./beetout.txt -k beet.ker
-          mpirun -np 2 ./m+ ./beet.var ./beet.dat -m 3 5 1 1 ./beetout.txt -r
+          mpirun -np 2 ./m+ ./beet.var ./beet.dat -m 3 28 2 3 ./beetout.txt -r
           mpirun -np 1 ./m+ ./beet.var ./beet.dat -a beetideal.txt
           mpirun -np 16 ./m+ ./orientalis.var ./orientalisIND.dat -m 2 50 1 1 orINDout.txt
           mpirun -np 1 ./m+ ./orientalis.var ./orientalisIND.dat -a orINDidealout.txt
           mpirun -np 20 ./m+ ./WheatSNP.var ./WheatSNP.dat -m 20 21 1 20 ./WheatSNPout.txt
-Examples (aprun):
-          aprun -n 2 ./m+ ./beet.var ./beet.dat -m 3 28 2 3 ./beetout.txt -k beet.ker
-          aprun -n 1 ./m+ ./beet.var ./beet.dat -a beetideal.txt
-          aprun -n 16 ./m+ ./orientalis.var ./orientalisIND.dat -m 2 50 1 1 orINDout.txt
-          aprun -n 1 ./m+ ./orientalis.var ./orientalisIND.dat -a orINDidealout.txt
-          aprun -n 20 ./m+ ./WheatSNP.var ./WheatSNP.dat -m 20 21 1 20 ./WheatSNPout.txt
