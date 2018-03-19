@@ -103,46 +103,6 @@ int MyProcessVarFile(char* VarFileBuffer, vector<int>& AllColumnIDList, vector<s
 			foovector.clear();  //zero vector foovector
 		}
     }
-	   
-    /*old way using file path
-    int i=0; // i is the row number
-	std::ifstream infile;
-	infile.open(VarFilePath);
-    while( !infile.eof() ) // To get all the lines.
-    {
-	    std::getline (infile, foo); // Saves the line in foo.
-	    
-	    //split foo on whitespace
-		foovector = split(foo);
-		
-		if (foovector.size() != 0) //omit the hanging last line, which has no information
-		{
-		
-			//identify active columns with qualitative data, classify those as reference or target
-			if (foovector[1] == "2") //column holds qualitative data
-			{
-				AllColumnIDList.push_back(i);
-				AllLociNameList.push_back(foovector[0]);
-				
-				if ((foovector[2] == "1") && (foovector[3] == "0")) //reference variable
-				{
-					ActiveColumnIDList.push_back(i);
-					ActiveLociNameList.push_back(foovector[0]);
-				}
-				else if ((foovector[2] == "0") && (foovector[3] == "1"))  //target variable
-				{
-					TargetColumnIDList.push_back(i);
-					TargetLociNameList.push_back(foovector[0]);
-				}
-			}
-		 
-			i++;
-			foovector.clear();  //zero vector foovector
-		}
-    }
-	
-	infile.close();
-*/
 	
 	//make a key showing which loci are target and which are reference
 	//this will be used later to sort out the AllAlleleByPopList
@@ -322,15 +282,6 @@ int MyProcessDatFileIII(char* DatFileBuffer, int procid, vector<int> AllColumnID
 	time_t startm,endm;
 	time (&startm);
 
-	/* old way
-	//read the whole file into a buffer using fread
-	char * buffer;
-	buffer = MyBigRead(DatFilePath);
-	stringstream s(buffer); //put giant char array into a stream
-	
-	strcpy(buffer,""); //clear char*
-	*/
-	
 	//put giant char array buffer into a stream, then delete the buffer to save memory 
 	stringstream s(DatFileBuffer);
 	strcpy(DatFileBuffer,""); //clear char* 
@@ -456,10 +407,6 @@ int MyProcessDatFileIII(char* DatFileBuffer, int procid, vector<int> AllColumnID
 		else cout << "    " << dif << " seconds.\n";	
 	}
 
-
-
-
-
 /*	//print out ByPop3d
 	for (i=0;i<ByPop3d.size();++i)
 	{
@@ -476,8 +423,6 @@ int MyProcessDatFileIII(char* DatFileBuffer, int procid, vector<int> AllColumnID
 	
 	}
 */
-
-
 
 	if (procid == 0) cout << "  Condensing data...\n";
 	time (&startm);
@@ -518,7 +463,6 @@ int MyProcessDatFileIII(char* DatFileBuffer, int procid, vector<int> AllColumnID
 			}
 		}
 		
-
  		//stop the clock on Condensing data...
 		time (&endm);
 		if (procid == 0) 
@@ -579,7 +523,6 @@ int MyProcessDatFileIII(char* DatFileBuffer, int procid, vector<int> AllColumnID
 			time (&startd);
 		}
 
-		
 		//resize AllAlleleByPopList
 		AllAlleleByPopList.resize(ByPop3d.size());//resize number of populations
 		for (i=0;i<AllAlleleByPopList.size();++i)
@@ -605,7 +548,6 @@ int MyProcessDatFileIII(char* DatFileBuffer, int procid, vector<int> AllColumnID
 			if (dif==1) cout << "    " << dif << " second.\n";	
 			else cout << "    " << dif << " seconds.\n";	
 		}
-	
 	}
 	
 	vector<vector<vector<int> > >().swap(ByPop3d); //clear ByPop3d
@@ -643,7 +585,6 @@ vector<int> MyGetMaxs(vector<vector<vector<int> > > ActiveAlleleByPopList, std::
 	vector<int> CurrLoc;
 	set<int> NewSet;
 
-
 	//determine unique alleles at each locus using a set
 	for (i=0;i<ActiveAlleleByPopList[0].size();++i)
 	{
@@ -660,125 +601,6 @@ vector<int> MyGetMaxs(vector<vector<vector<int> > > ActiveAlleleByPopList, std::
 		ActiveMaxAllelesList.push_back(NewSet.size()); //the set size after adding all populations for locus i is the maximum number of alleles
 	}
 	return ActiveMaxAllelesList;
-	
-/*Old procedure
-	if (Rarify == "no")
-	{
-		//determine unique alleles at each locus using a set
-		for (i=0;i<ActiveAlleleByPopList[0].size();++i)
-		{
-			
-
-		
-			//temporary section to calculate sss
-			//find the smallest non-zero sample (~= smallest pop size) for current locus, must look at all loci due to missing data
-			//exclude samples where the number of sampled alleles = 0 (due to missing data)
-			s = std::numeric_limits<int>::max(); //set initial s to largest integer possible
-			for (j=0;j<ActiveAlleleByPopList.size();j++)
-			{
-				//test whether current sample size is lowest so far
-				if (ActiveAlleleByPopList[j][0].size() == 0) continue;
-				else if (ActiveAlleleByPopList[j][0].size() <= s) s = ActiveAlleleByPopList[j][0].size();
-			}
-			sss.push_back(s);  //add the smallest non-zero sample size for this locus to the list of such things.
-		
-			
-			
-			
-			
-			
-			NewSet.clear();
-			for (j=0;j<ActiveAlleleByPopList.size();j++)
-			{
-				CurrLoc = ActiveAlleleByPopList[j][i]; //you are traversing the locus 'column' of the 3d grid
-													   //get locus i for population j
-				for (k=0;k<CurrLoc.size();++k)
-				{
-					NewSet.insert(CurrLoc[k]);	//place alleles into set to eliminate redundancies
-				}
-			}
-			ActiveMaxAllelesList.push_back(NewSet.size()); //the set size after adding all populations for locus i is the maximum number of alleles
-		}
-	}
-	else if (Rarify == "yes")
-	{
-		std::pair<std::set<int>::iterator,bool> ret;
-		unsigned int ns; //ns is a counter that limits the number of novel alleles added to NewSet by a single population
-		                 //to the maximum number that could be added by the smallest population.  this is rarefaction, essentially.
-		vector<vector<int> > CurrPop;
-		for (i=0;i<ActiveAlleleByPopList[0].size();++i)
-		{
-			//find the smallest non-zero sample (~= smallest pop size) for current locus, must look at all loci due to missing data
-			//exclude samples where the number of sampled alleles = 0 (due to missing data)
-			s = std::numeric_limits<int>::max(); //set initial s to largest integer possible
-			for (j=0;j<ActiveAlleleByPopList.size();j++)
-			{
-				//test whether current sample size is lowest so far
-				//if (ActiveAlleleByPopList[j][0].size() <= s) s = ActiveAlleleByPopList[j][0].size();  //allows s=0 for loci where all data is missing for a pop
-				//does not allow s=0
-				if (ActiveAlleleByPopList[j][i].size() == 0) continue;
-				else if (ActiveAlleleByPopList[j][i].size() <= s) s = ActiveAlleleByPopList[j][i].size();
-			}
-			sss.push_back(s);  //add the smallest non-zero sample size for this locus to the list of such things.
-			
-			//collect alleles at locus i, for all pops
-			vector<vector<int> >().swap(CurrPop); //clear CurrPop
-			for (j=0;j<ActiveAlleleByPopList.size();j++)
-			{
-				CurrPop.push_back(ActiveAlleleByPopList[j][i]); //extract alleles for all populations for this locus
-			}
-			
-			
-				if (procid == 0)
-				{
-					cout << "before " << "loc=" << i << " CurrPop.size()=" << CurrPop.size() << "\n";
-					for (unsigned int l=0;l<CurrPop.size();++l) cout << CurrPop[l].size() << " ";
-					cout << "\n";
-				}
-			
-
-			//sort CurrPop by population/sample size, so that alleles can be counted from smallest pop to largest<-doesn't matter
-			//std::sort(CurrPop.begin(), CurrPop.end(), [](const vector<int> & a, const vector<int> & b){ return a.size() < b.size(); });
-				
-			
-				if (procid == 0)
-				{
-					cout << "after " << "loc=" << i << " CurrPop.size()=" << CurrPop.size() << "\n";
-					for (unsigned int l=0;l<CurrPop.size();++l) cout << CurrPop[l].size() << " ";
-					cout << "\n";
-				}
-			
-			
-			//determine unique alleles across populations using a set
-			//allow no more than s new alleles to be added to the set, per population
-			NewSet.clear();
-			for (j=0;j<CurrPop.size();j++)
-			{
-				//CurrLoc = CurrPop[j]; //all alleles for pop j, in order of increasing population size
-				std::shuffle(CurrPop[j].begin(), CurrPop[j].end(), rng); //shuffle the order of the alleles so that a random sample of <=s new alleles can be taken
-									  
-				ns = 0;
-				for (k=0;k<CurrPop[j].size();++k)
-				{
-					//allow no more than s new alleles to be added to the set, per population
-					if (ns < s)
-					{
-						ret = NewSet.insert(CurrPop[j][k]); //place alleles into set to eliminate redundancies, returns pair<it,bool=true> if a new item is accepted
-						if (ret.second == true) 
-						{
-							++ns; //if a new allele is inserted, index up ns
-							//cout << "loc=" << i << " pop=" << j << " ns=" << ns << " s=" << s << " k=" << k << "\n";
-						}  
-					}
-					else break;
-				}
-			}
-			
-			ActiveMaxAllelesList.push_back(NewSet.size()); //the set size after adding all populations for locus i is the maximum number of alleles
-		}//repeat on loci	
-	}
-	return ActiveMaxAllelesList;
-*/
 }
 
 vector<int> MySubSampleData(vector<int> bb, unsigned int s, std::mt19937_64& rng)
@@ -842,7 +664,6 @@ vector<vector<vector<int> > > MyRarifyData(vector<vector<vector<int> > > AlleleB
 	
 	return AlleleByPopList;
 }
-
 
 bool fileExists(const char *fileName)
 {
@@ -1332,9 +1153,6 @@ int main( int argc, char* argv[] )
 		}
 	*/
 
-
-
-
 	vector<vector<vector<int> > >().swap(AllAlleleByPopList); //clear variable, no longer needed
 		
 	if (procid == 0) 
@@ -1384,8 +1202,6 @@ int main( int argc, char* argv[] )
 		}
 	*/	
 		
-
-
 	//CALCULATE SOME USEFUL VARIABLES
 	//get total number of accessions
 	unsigned int NumberOfAccessions = ActiveAlleleByPopList.size();
@@ -1412,14 +1228,6 @@ int main( int argc, char* argv[] )
 		PopSizes.push_back(b); //synchronized with FullAccessionNameList
 		//cout << "b="<<b<<"\n";	
 	}
-
-	/*
-		//print out PopSizes
-		for (unsigned int i = 0;i<PopSizes.size(); ++i) 
-		{
-			cout << "PopSizes[" << i << "]=" << PopSizes[i] << "\n";
-		}
-	*/
 	
 	if (procid == 0) 
 	{
@@ -1518,9 +1326,6 @@ int main( int argc, char* argv[] )
 	ActiveMaxAllelesList = MyGetMaxs(ActiveAlleleByPopList, rng);
 	TargetMaxAllelesList = MyGetMaxs(TargetAlleleByPopList, rng);
 
-
-
-
 	/*
 		//Print out alleles from TargetAlleleByPopList
 		if (procid == 1) 
@@ -1541,13 +1346,6 @@ int main( int argc, char* argv[] )
 			}
 		}
 	*/
-
-
-
-
-
-
-
 
 	//***MPI: MASTER 0 RARIFIES THE DATA, BROADCASTS TO ALL PROCS
 	//If Rarify="yes", reduce the Active(Target)AlleleByPopList to the smallest non-zero sample size for each locus
