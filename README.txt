@@ -35,3 +35,5 @@ Examples (mpirun):
           mpirun -np 16 ./m+ ./orientalis.var ./orientalisIND.dat -m 2 50 1 1 orINDout.txt
           mpirun -np 1 ./m+ ./orientalis.var ./orientalisIND.dat -a orINDidealout.txt
           mpirun -np 20 ./m+ ./WheatSNP.var ./WheatSNP.dat -m 20 21 1 20 ./WheatSNPout.txt
+          mpirun -np 10 ./m+ ./At.var ./At.dat -m 2 10 1 1 ./Atout.txt
+          mpirun -np 10 ./m+ ./At.var ./At.dat -m 2 10 1 1 ./Atoutr.txt -r

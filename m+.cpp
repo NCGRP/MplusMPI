@@ -69,6 +69,7 @@ int MyProcessVarFile(char* VarFileBuffer, vector<int>& AllColumnIDList, vector<s
     std::string foo;
     vector<std::string> foovector;
     unsigned int k;
+
     int i=0; // i is the row number
 
 	std::string vfb(VarFileBuffer); //convert char* to string
@@ -229,7 +230,7 @@ int MyReduceToRef(vector<vector<vector<int> > > AllAlleleByPopList, vector<int> 
 	{
 		for (j=0;j<AllAlleleByPopList[i].size();++j) //iterate thru loci
 		{
-			b.clear();
+			vector<int>().swap(b);
 			b = AllAlleleByPopList[i][j];
 			
 			if (ReferenceOrTargetKey[j] == 0) //it is a reference locus
@@ -580,22 +581,20 @@ vector<unsigned int> Mysss(vector<vector<vector<int> > > AlleleByPopList)
 //returns maximum number of alleles possible at each locus for active and target
 vector<int> MyGetMaxs(vector<vector<vector<int> > > ActiveAlleleByPopList, std::mt19937_64& rng)
 {
-	unsigned int i, j, k; 
+	unsigned int i, j, k;
 	vector<int> ActiveMaxAllelesList;
-	vector<int> CurrLoc;
 	set<int> NewSet;
 
 	//determine unique alleles at each locus using a set
 	for (i=0;i<ActiveAlleleByPopList[0].size();++i)
 	{
 		NewSet.clear();
+		//traverse the locus 'column' of the 3d grid, get locus i for population j
 		for (j=0;j<ActiveAlleleByPopList.size();j++)
 		{
-			CurrLoc = ActiveAlleleByPopList[j][i]; //you are traversing the locus 'column' of the 3d grid
-												   //get locus i for population j
-			for (k=0;k<CurrLoc.size();++k)
+			for (k=0;k<ActiveAlleleByPopList[j][i].size();++k)
 			{
-				NewSet.insert(CurrLoc[k]);	//place alleles into set to eliminate redundancies
+				NewSet.insert(ActiveAlleleByPopList[j][i][k]);	//place alleles into set to eliminate redundancies
 			}
 		}
 		ActiveMaxAllelesList.push_back(NewSet.size()); //the set size after adding all populations for locus i is the maximum number of alleles
@@ -981,30 +980,29 @@ int main( int argc, char* argv[] )
 			if ( procid == 0 ) cout << "ERROR:  A minimum core size of 1 is not allowed.  Please correct the command line.  Quitting...\n\n"; 
 			exit (EXIT_FAILURE); //master0 reports above, everybody quits here
 		}
-	
 		if (KernelAccessionList.size() > MinCoreSize)
 		{
 			if ( procid == 0 ) cout << "ERROR:  The number of mandatory accessions ("<<KernelAccessionList.size()
 				 <<") is greater than the minimum core size ("<<MinCoreSize
 				 <<").  Please modify the kernel file or the command line argument.  Quitting...\n\n";
-				exit (EXIT_FAILURE); //master0 reports above, everybody quits here
+				exit (EXIT_FAILURE);
 		}
 	}
 	if (Kernel == "yes" && Ideal == "yes" && DoM == "no")
 	{
 		if ( procid == 0 ) cout << "ERROR:  A* search cannot be performed with a kernel file.  Please correct the command line.  Quitting...\n\n";
-		exit (EXIT_FAILURE); //master0 reports above, everybody quits here
+		exit (EXIT_FAILURE);
 	}
-	
+
 	//DETERMINE MACHINE CONFIGURATIION
-	int ncpu = sysconf( _SC_NPROCESSORS_ONLN  );
+	int ncpu = sysconf( _SC_NPROCESSORS_ONLN );
 
 	//PROCESS INPUT DATA
 	
 	//start the clock
 	time_t starti,endi;
 	time (&starti);
-	
+
 	//***MPI: MASTER 0 READS THE VAR FILE, BROADCASTS TO ALL PROCS
 	//read the file into a buffer using fread, pass it to other procs using MPI_Bcast
 	unsigned long long f = 0; //var (and later, dat) file size
@@ -1029,7 +1027,7 @@ int main( int argc, char* argv[] )
 	MPI_Bcast(&VarFileBuffer[0], f, MPI_CHAR, 0, MPI_COMM_WORLD); //broadcast the var file contents to all procs
 	MPI_Barrier(MPI_COMM_WORLD);
 
-		
+
 	//.var file
 	vector<int> AllColumnIDList;
 	vector<std::string> AllLociNameList;
@@ -1061,7 +1059,7 @@ int main( int argc, char* argv[] )
 				cout << ActiveLociNameList[i] << "\t" << (ActiveColumnIDList[i] + 1) << "\n";
 			}
 		}
-	
+
 		//Print out TargetColumnIDList and TargetLociNameList
 		if (TargetColumnIDList.size() == 0)
 		{
@@ -1075,7 +1073,7 @@ int main( int argc, char* argv[] )
 				cout << TargetLociNameList[i] << "\t" << (TargetColumnIDList[i] + 1) << "\n";
 			}
 		}
-		
+
 		//process .dat file
 		cout << "\nProcessing .dat file...\n";
 	}
@@ -1083,7 +1081,7 @@ int main( int argc, char* argv[] )
 
 	//***MPI: MASTER 0 READS THE DAT FILE, BROADCASTS TO ALL PROCS
 	//read the whole file into a buffer using fread, pass it to other procs using MPI_Bcast
-	f = 0; //dat file size
+	f=0; //dat file size
 	
 	if (procid == 0)
 	{
@@ -1131,7 +1129,7 @@ int main( int argc, char* argv[] )
 	vector<vector<vector<int> > > ActiveAlleleByPopList; 
 	vector<vector<vector<int> > > TargetAlleleByPopList; 
 	MyReduceToRef(AllAlleleByPopList, ReferenceOrTargetKey, ActiveAlleleByPopList, TargetAlleleByPopList); //latter 2 variables updated as reference
-	
+
 	/*
 		//Print out alleles from AllAlleleByPopList
 		if (procid == 0) 
@@ -1151,19 +1149,7 @@ int main( int argc, char* argv[] )
 				}
 			}
 		}
-	*/
-
-	vector<vector<vector<int> > >().swap(AllAlleleByPopList); //clear variable, no longer needed
-		
-	if (procid == 0) 
-	{
-		time (&endd);
-		dif = difftime (endd,startd);
-		if (dif==1) cout << "    " << dif << " second.\n";	
-		else cout << "    " << dif << " seconds.\n";	
-	}
-		
-	/*		
+			
 		//Print out FullAccessionNameList
 		cout << "\n\nPopulation names\n";
 		for (unsigned int i=0; i<FullAccessionNameList.size();i++) cout << FullAccessionNameList[i] << "\n";
@@ -1201,7 +1187,17 @@ int main( int argc, char* argv[] )
 			}
 		}
 	*/	
-		
+
+	vector<vector<vector<int> > >().swap(AllAlleleByPopList); //clear variable, no longer needed
+
+	if (procid == 0) 
+	{
+		time (&endd);
+		double dif = difftime (endd,startd);
+		if (dif==1) cout << "    " << dif << " second.\n";	
+		else cout << "    " << dif << " seconds.\n";	
+	}
+
 	//CALCULATE SOME USEFUL VARIABLES
 	//get total number of accessions
 	unsigned int NumberOfAccessions = ActiveAlleleByPopList.size();
@@ -1215,7 +1211,7 @@ int main( int argc, char* argv[] )
 			exit (EXIT_FAILURE); //master0 reports above, everybody quits here
 		}
 	}
-	
+
 	//get number of loci
 	int NumLoci = ActiveAlleleByPopList[1].size();
 	
@@ -1226,7 +1222,6 @@ int main( int argc, char* argv[] )
 		bf = FullAccessionNameList[i];
 		b = std::count (IndivPerPop.begin(), IndivPerPop.end(), bf);
 		PopSizes.push_back(b); //synchronized with FullAccessionNameList
-		//cout << "b="<<b<<"\n";	
 	}
 	
 	if (procid == 0) 
@@ -1234,6 +1229,7 @@ int main( int argc, char* argv[] )
 		cout << "  Calculating run specific parameters...\n";
 		time (&startd);
 	}
+
 	//1. remove target alleles from AllAlleles
 	vector<int> AllRefAlleles = MyRemoveTargetAlleles(AllAlleles, AllColumnIDList, TargetColumnIDList);
 	vector<int>().swap(AllAlleles); //clear variable, no longer needed
@@ -1242,7 +1238,7 @@ int main( int argc, char* argv[] )
 	vector<vector<int> > RefAllelesIntoRows(IndivPerPop.size(), vector<int> ( ActiveLociNameList.size() ));
 	MyMakeRefAllelesIntoRows(AllRefAlleles, ActiveLociNameList, RefAllelesIntoRows);
 	vector<int>().swap(AllRefAlleles); //clear variable, no longer needed
-		
+
 	//3. extract alleles into vector of pairs (ignores missing data -9999)
 	vector<std::pair<std::string, vector<int> > > RefAllelesByLocus; // first = locus name, second = vector of all alleles present, updated as reference below
 	MyMakeRefAllelesByLocus(RefAllelesIntoRows, ActiveLociNameList, RefAllelesByLocus);
@@ -1256,10 +1252,10 @@ int main( int argc, char* argv[] )
 	if (procid == 0) 
 	{
 		time (&endd);
-		dif = difftime (endd,startd);
+		double dif = difftime (endd,startd);
 		if (dif==1) cout << "    " << dif << " second.\n";	
 		else cout << "    " << dif << " seconds.\n";	
-		
+
 		cout << "  Finalizing data structures...\n";
 		time (&startd);
 	}
@@ -1282,7 +1278,7 @@ int main( int argc, char* argv[] )
 				cout << " " << frqs[j] << "\n";
 			}
 		}
-	*/	
+	*/
 	
 	//from list of all accession names, generate an index that is used later to locate alleles belonging to specific accessions
 	vector<int> AccessionNameList;
@@ -1310,11 +1306,9 @@ int main( int argc, char* argv[] )
 	}
 	//reverse sort KernelAccessionIndex, necessary later
 	std::sort(KernelAccessionIndex.begin(), KernelAccessionIndex.end(), std::greater<int>());
-		
 
 	//seed the random number generator for each procid
 	unsigned long long seed = (unsigned long long)chrono::high_resolution_clock::now().time_since_epoch().count();
-	//std::random_device rd;     // only used once to initialise (seed) engine
 	std::mt19937_64 rng(seed*(procid+1));    // random-number engine used (Mersenne-Twister in this case), seeded with time*procid
 
 	//get maximum number of alleles possible at each locus for active and target
@@ -1414,7 +1408,7 @@ int main( int argc, char* argv[] )
 	if (procid == 0) 
 	{
 		time (&endd);
-		dif = difftime (endd,startd);
+		double dif = difftime (endd,startd);
 		if (dif==1) cout << "    " << dif << " second.\n";	
 		else cout << "    " << dif << " seconds.\n";	
 	}
@@ -1506,7 +1500,7 @@ int main( int argc, char* argv[] )
 		
 		//stop the clock
 		time (&endm);
-		dif = difftime (endm,startm);
+		double dif = difftime (endm,startm);
 		if ( procid == 0 ) cout << "\nM+ search complete.  Elapsed time = "<< dif << " seconds.\n\n";
 	
 	}

@@ -12,13 +12,12 @@
 #include <random>
 #include <set>
 #include <string>
-#include <string.h>
+#include <cstring>
 #include <sstream>
 #include <time.h>
 #include <unistd.h>
 #include <vector>
 using namespace std;
-
 
 /***************STRUCTS*****************/
 struct Alfreq //contains allele frequencies for all alleles at one locus
@@ -58,7 +57,7 @@ class Node
 		vector<int> GetAlleleCounts();
 		vector<vector<int> > GetSetOfAlleles();
 		int GetPopSize();
-				
+
 		//sort functor for SortedCostNodeList::push, ranks Nodes by distance metrics
 		struct fSort : public binary_function<Node, Node, bool>
 	   	{
@@ -120,12 +119,7 @@ class SortedCostNodeList
 
 
 
-
 /***************VARIABLES*****************/
-
-
-/***************SHARED FUNCTIONS IN rare.cpp*****************/
-int rtkrare(stringstream& in);
 
 
 /***************SHARED FUNCTIONS IN aStar.cpp*****************/

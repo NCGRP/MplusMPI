@@ -9,7 +9,6 @@ int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> A
 	int NumLoci = AlleleList[0].size();
 	int i, j, M;
 	unsigned int k;
-	vector<int> CurrLoc;
 	vector<int> Mlist(NumLoci);
 	set<int> AlleleSet;
 
@@ -27,15 +26,12 @@ int MyCalculateDiversity(vector<vector<vector<int> > > AlleleList, vector<int> A
 			AlleleSet.clear(); //clear AlleleSet
 			for (j=0;j<CoreSize;j++)
 			{
-				//CurrLoc = AlleleList[j][i];
-				//for (k=0;k<CurrLoc.size();++k)
 				for (k=0;k<AlleleList[j][i].size();++k)
 				{
-					//AlleleSet.insert(CurrLoc[k]); //locus i for all population j
 					AlleleSet.insert(AlleleList[j][i][k]); //locus i for all population j
 				}
 			}
-		
+
 			if (AlleleSet.size() == 0) M=0;
 			else M=AlleleSet.size();
 			
@@ -127,7 +123,6 @@ int countSubstring(const std::string& str, const std::string& sub)
     return count;
 }
 
-
 //M+	
 void mp(
 	int MinCoreSize,
@@ -155,7 +150,6 @@ void mp(
 	int nproc = MPI::COMM_WORLD.Get_size ( );  //Get the number of processes.
 	int procid = MPI::COMM_WORLD.Get_rank ( );  //Get the individual process ID.
 	
-
 	//set up vectors to fill with results
 	//below is a stupid way to calculate the number of rows in the output file, value l (which = V1) 
 	//used to monitor progress and as the maximum vector index for shared output vectors
@@ -298,7 +292,6 @@ void mp(
 		vector<int> TempList;
 		vector<int> TempList2;
 		vector<int> bestcore;
-		vector<int> pbcore;
 		vector<std::string> TempListStr;
 	
 		
@@ -537,7 +530,6 @@ void mp(
 							cout << "  ";
 							for (unsigned int  z=0;z<bestcore.size();++z) cout << bestcore[z] << ",";					
 							cout << "  " << nnew << "  " << best << "  " << StartingDiversity << "  ";
-							for (unsigned int  z=0;z<pbcore.size();++z) cout << pbcore[z] << ",";
 							cout << "\n";					
 						*/
 
@@ -554,8 +546,6 @@ void mp(
 
 					/* print progress of search
 						cout << "best=" << best << " StartingDiversity=" << StartingDiversity << " r=" << r << " ";
-						for (unsigned int z=0;z<pbcore.size();++z) cout << pbcore[z] << ",";
-						cout << " ";
 						for (unsigned int z=0;z<bestcore.size();++z) cout << bestcore[z] << ",";
 						cout << "\n";
 
@@ -563,10 +553,10 @@ void mp(
 
 					AccessionsInCore = bestcore; //define starting variable for next MSTRAT iteration
 		
+					//if there has been no improvement from the prior iteration, you have reached
+					// the plateau and should exit the repeat
 					if (best == StartingDiversity) 
 					{
-						//if there has been no improvement from the prior iteration, you have reached
-						// the plateau and should exit the repeat
 						plateau++;
 						if (plateau > 0) break;
 					}
