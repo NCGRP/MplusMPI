@@ -29,7 +29,7 @@ Notes:  Missing data must be coded as 9999. Option -m uses MPI and -a uses OpenM
         To validate input files, omit all options.
 
 Examples (mpirun):
-          mpirun -np 2 ./m+ ./beet.var ./beet.dat -m 3 28 2 3 ./beetout.txt -k beet.ker
+          mpirun -np 2 ./m+ ./beet.var ./beet.dat -m 3 28 2 3 ./beetout.txt
           mpirun -np 2 ./m+ ./beet.var ./beet.dat -m 3 28 2 3 ./beetoutk.txt -k beet.ker
           mpirun -np 1 ./m+ ./beet.var ./beet.dat -a beetideal.txt
           mpirun -np 16 ./m+ ./orientalis.var ./orientalisIND.dat -m 2 50 1 1 orINDout.txt
